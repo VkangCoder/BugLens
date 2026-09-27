@@ -8,6 +8,11 @@ node_modules/
 dist/
 build/
 
+# Bun
+.bun/
+*.bun
+# bun.lockb
+
 # Env / secrets
 .env
 appsettings.Development.json

@@ -1,0 +1,84 @@
+[
+  {
+    "projectId": "demo-project",
+    "startedAt": "2026-09-24T09:00:00.000Z",
+    "endedAt": "2026-09-24T09:00:12.500Z",
+    "initialUrl": "https://example.com/login",
+    "browser": { "name": "Chrome", "version": "150" },
+    "viewport": { "width": 1440, "height": 900 },
+    "events": [
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T09:00:03.100Z",
+        "url": "https://example.com/login",
+        "data": { "tagName": "INPUT", "text": "" }
+      },
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T09:00:08.400Z",
+        "url": "https://example.com/login",
+        "data": { "tagName": "BUTTON", "text": "Login" }
+      }
+    ]
+  },
+
+  {
+    "projectId": "demo-project",
+    "startedAt": "2026-09-24T10:15:00.000Z",
+    "endedAt": "2026-09-24T10:17:45.000Z",
+    "initialUrl": "https://example.com/checkout",
+    "browser": { "name": "Chrome", "version": "150" },
+    "viewport": { "width": 1920, "height": 1080 },
+    "events": [
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T10:15:05.000Z",
+        "url": "https://example.com/checkout",
+        "data": { "tagName": "DIV", "text": "Add to cart" }
+      },
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T10:15:20.000Z",
+        "url": "https://example.com/checkout",
+        "data": { "tagName": "INPUT", "text": "" }
+      },
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T10:16:10.000Z",
+        "url": "https://example.com/checkout",
+        "data": { "tagName": "SELECT", "text": "Payment method" }
+      },
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T10:17:30.000Z",
+        "url": "https://example.com/checkout",
+        "data": { "tagName": "BUTTON", "text": "Place Order" }
+      }
+    ]
+  },
+  {
+    "projectId": "other-project",
+    "startedAt": "2026-09-24T14:30:00.000Z",
+    "endedAt": null,
+    "initialUrl": "https://example.com/dashboard",
+    "browser": { "name": "Chrome", "version": "149" },
+    "viewport": { "width": 1366, "height": 768 },
+    "events": [
+      {
+        "type": "click",
+        "timestamp": "2026-09-24T14:30:07.000Z",
+        "url": "https://example.com/dashboard",
+        "data": { "tagName": "A", "text": "Settings" }
+      }
+    ]
+  },
+  {
+    "projectId": "demo-project",
+    "startedAt": "2026-09-24T16:00:00.000Z",
+    "endedAt": "2026-09-24T16:00:03.000Z",
+    "initialUrl": "https://example.com/about",
+    "browser": { "name": "Firefox", "version": "131" },
+    "viewport": { "width": 1280, "height": 720 },
+    "events": []
+  }
+]
