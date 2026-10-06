@@ -1,0 +1,19 @@
+.player {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time {
+  margin-left: 10px;
+  color: var(--ant-color-text);
+  font: 500 12px/1 var(--ant-font-family-code);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.total {
+  color: var(--ant-color-text-tertiary);
+  font: 400 11px/1 var(--ant-font-family-code);
+  white-space: nowrap;
+}

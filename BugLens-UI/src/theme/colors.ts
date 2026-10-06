@@ -1,7 +1,3 @@
-// All BugLens colors live here (values from the buglens-design skill).
-// Keys use antd token names, so antd reads them directly and SCSS can use
-// them as CSS variables: colorPrimary → var(--ant-color-primary).
-
 export const lightColors = {
   colorPrimary: "#218775",
   colorSuccess: "#4d7c2a",
@@ -40,4 +36,38 @@ export const darkColors = {
 
   colorBorder: "#45423e",
   colorBorderSecondary: "#2f2d2a",
+};
+
+// BugLens-only colors antd has no token for (event types, JSON payloads).
+// ThemeProvider sets them as CSS variables: var(--event-click), var(--code-key), ...
+export const lightBrandColors = {
+  "--event-click": "#218775",
+  "--event-input": "#3466b5",
+  "--event-navigation": "#9a7432",
+  "--event-network": "#7c776f",
+  "--event-console": "#8e4f7a",
+  "--event-error": "#c8382b",
+  "--masked": "#a19c93",
+  "--code-bg": "#eceae6",
+  "--code-fg": "#2f2d2a",
+  "--code-key": "#13594e",
+  "--code-string": "#9a7432",
+  "--code-number": "#284f8e",
+  "--code-null": "#7c776f",
+};
+
+export const darkBrandColors: typeof lightBrandColors = {
+  "--event-click": "#6fc2af",
+  "--event-input": "#7ea6e8",
+  "--event-navigation": "#d3ae68",
+  "--event-network": "#a19c93",
+  "--event-console": "#cc8db8",
+  "--event-error": "#f0705f",
+  "--masked": "#5e5a54",
+  "--code-bg": "#141312",
+  "--code-fg": "#dedbd5",
+  "--code-key": "#6fc2af",
+  "--code-string": "#d3ae68",
+  "--code-number": "#7ea6e8",
+  "--code-null": "#7c776f",
 };

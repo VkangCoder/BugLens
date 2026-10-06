@@ -25,3 +25,5 @@ appsettings.Development.json
 # OS
 Thumbs.db
 .DS_Store
+# Mock data: IDs created by mock/seed.mjs
+mock/.seeded-ids.json

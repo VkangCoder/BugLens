@@ -12,10 +12,9 @@ namespace BugLens.Api.Controllers;
 public class SessionsController(IBugSessionService sessionService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken ct)
+    public async Task<IActionResult> GetAll([FromQuery] SessionListQuery query, CancellationToken ct)
     {
-        var sessions = await sessionService.GetAllAsync(ct);
-        var response = sessions.Select(SessionMapper.ToResponse).ToList();
+        var response = await sessionService.GetSummariesAsync(query, ct);
         return Ok(response);
     }
 

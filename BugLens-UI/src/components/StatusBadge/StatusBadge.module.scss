@@ -1,0 +1,32 @@
+// buglens-design feedback/Badge with dot
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 7px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 4px;
+  background: var(--ant-color-fill-tertiary);
+  color: var(--ant-color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ant-color-text-tertiary);
+}
+
+.danger {
+  border-color: transparent;
+  background: var(--ant-color-error-bg);
+  color: var(--ant-color-error-text);
+
+  .dot {
+    background: var(--ant-color-error);
+  }
+}

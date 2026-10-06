@@ -1,0 +1,18 @@
+.masked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ant-color-text-tertiary);
+  font: 400 12px/1 var(--ant-font-family-code);
+}
+
+.dots {
+  letter-spacing: 0.1em;
+  color: var(--masked);
+}
+
+.reason {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

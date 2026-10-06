@@ -1,0 +1,73 @@
+.topbar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  height: 100%;
+}
+
+.breadcrumb {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+
+  // Keep long URLs on one line
+  ol {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    white-space: nowrap;
+  }
+}
+
+.separator {
+  display: block;
+  color: var(--ant-color-text-tertiary);
+}
+
+.crumbMuted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ant-color-text-secondary);
+}
+
+.crumbMono {
+  font-family: var(--ant-font-family-code);
+  font-size: 12px;
+  color: var(--ant-color-text);
+}
+
+.jump {
+  flex: none;
+  width: 240px;
+  height: 28px;
+}
+
+.searchIcon {
+  color: var(--ant-color-text-tertiary);
+}
+
+.kbdGroup {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.kbd {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-bottom-width: 2px;
+  border-radius: 2px;
+  background: var(--ant-color-fill-tertiary);
+  color: var(--ant-color-text-tertiary);
+  font: 500 10px/14px var(--ant-font-family-code);
+  text-align: center;
+}

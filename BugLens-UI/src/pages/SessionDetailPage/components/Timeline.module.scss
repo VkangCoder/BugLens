@@ -1,0 +1,92 @@
+$lane-h: 18px;
+$ruler-h: 20px;
+
+.timeline {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 8px;
+  user-select: none;
+}
+
+.labels {
+  padding-top: $ruler-h;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  height: $lane-h;
+  color: var(--ant-color-text-tertiary);
+  font: 400 11px/1 var(--ant-font-family-code);
+}
+
+.track {
+  position: relative;
+  cursor: pointer;
+}
+
+.ruler {
+  position: relative;
+  height: $ruler-h;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  color: var(--ant-color-text-tertiary);
+  font: 400 10px/1 var(--ant-font-family-code);
+}
+
+// Dashed hairlines only between timeline lanes
+.lane {
+  position: relative;
+  height: $lane-h;
+  border-bottom: 1px dashed var(--ant-color-border-secondary);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+// Ticks for most events, a dot for errors
+.marker {
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 12px;
+  border-radius: 1px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.markerError {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.markerSelected {
+  outline: 2px solid var(--ant-color-text);
+  outline-offset: 1px;
+}
+
+.playhead {
+  position: absolute;
+  top: 14px;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--ant-color-text);
+  pointer-events: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -4px;
+    width: 7px;
+    height: 7px;
+    background: var(--ant-color-text);
+    transform: rotate(45deg);
+  }
+}

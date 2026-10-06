@@ -38,14 +38,31 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        await scope.ServiceProvider.GetRequiredService<IBugSessionService>().EnsureIndexesAsync(CancellationToken.None);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogWarning(ex, "Could not create MongoDB indexes. The API still runs, but list queries may be slower.");
+    }
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+// CORS first, so every response (redirects and errors too) carries the CORS headers
 app.UseCors("AllowExtension");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseAuthorization();
 app.MapControllers();
 

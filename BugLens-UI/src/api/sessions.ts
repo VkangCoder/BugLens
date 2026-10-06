@@ -1,4 +1,9 @@
-import type { SessionResponse } from "@/types/session";
+import type {
+  PagedResponse,
+  SessionListParams,
+  SessionResponse,
+  SessionSummary,
+} from "@/types/session";
 import axios from "axios";
 
 const api = axios.create({
@@ -8,12 +13,18 @@ const api = axios.create({
   },
 });
 
-export async function getSessions(): Promise<SessionResponse[]> {
-  const response = await api.get<SessionResponse[]>("/sessions");
+export async function getSessions(
+  params: SessionListParams = {},
+): Promise<PagedResponse<SessionSummary>> {
+  const response = await api.get<PagedResponse<SessionSummary>>("/sessions", { params });
   return response.data;
 }
 
 export async function getSessionById(id: string): Promise<SessionResponse> {
   const response = await api.get<SessionResponse>(`/sessions/${id}`);
   return response.data;
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  await api.delete(`/sessions/${id}`);
 }

@@ -1,14 +1,34 @@
+// Shell from the buglens-design skill: fixed 224px sidebar, 48px top bar, scrolling content.
+// Only the sidebar and the top bar are fixed; pages scroll inside .content.
 .root {
   height: 100vh;
+  overflow: hidden;
 }
+
 .sider {
   border-right: 1px solid var(--ant-color-border-secondary);
 }
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .header {
   display: flex;
+  flex: none;
   align-items: center;
+  height: 48px;
+  padding: 0 16px 0 20px;
   border-bottom: 1px solid var(--ant-color-border-secondary);
+  line-height: normal;
 }
+
 .content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   overflow: auto;
 }

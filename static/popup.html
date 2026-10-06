@@ -45,18 +45,28 @@
           d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"
         />
       </symbol>
+      <symbol id="i-text-cursor-input" viewBox="0 0 24 24">
+        <path d="M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1" />
+        <path d="M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5" />
+        <path d="M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1" />
+        <path d="M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7" />
+        <path d="M9 7v10" />
+      </symbol>
+      <symbol id="i-compass" viewBox="0 0 24 24">
+        <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" />
+        <circle cx="12" cy="12" r="10" />
+      </symbol>
+      <symbol id="i-terminal" viewBox="0 0 24 24">
+        <polyline points="4 17 10 11 4 5" />
+        <line x1="12" x2="20" y1="19" y2="19" />
+      </symbol>
     </svg>
 
     <main class="popup">
       <header class="popup-header">
         <span class="logo">
           <!-- Mark from assets/logo/buglens-mark.svg, heavier stroke below 24px as in the Logo component -->
-          <svg
-            class="logo-mark"
-            viewBox="0 0 120 120"
-            fill="none"
-            aria-hidden="true"
-          >
+          <svg class="logo-mark" viewBox="0 0 120 120" fill="none" aria-hidden="true">
             <path
               d="M12 92C2 46 50 12 63 42C74 68 32 88 28 60C25 38 58 34 63 54C65 60 70 60 76 60L98 60"
               stroke="var(--fg-1)"
@@ -84,23 +94,15 @@
       <section class="view" id="view-idle" hidden>
         <div>
           <h2 class="title">Ready to record</h2>
-          <p class="caption">
-            Clicks on this tab are captured in order, with exact timing.
-          </p>
+          <p class="caption">Clicks, inputs, navigation, network requests and errors on this tab are captured in order. Password fields are masked.</p>
         </div>
-        <button
-          type="button"
-          class="btn btn-primary btn-lg btn-block"
-          id="start"
-        >
+        <button type="button" class="btn btn-primary btn-lg btn-block" id="start">
           <svg class="icon"><use href="#i-circle" /></svg>
           Start recording
         </button>
         <div class="meta-row">
           <span id="last-session"></span>
-          <a href="http://localhost:3000/" id="open-dashboard"
-            >Open dashboard</a
-          >
+          <a href="http://localhost:3000" id="open-dashboard">Open dashboard</a>
         </div>
       </section>
 
@@ -111,9 +113,7 @@
           <span class="caption">events captured</span>
         </div>
         <ol class="feed" id="feed"></ol>
-        <p class="feed-empty caption" id="feed-empty">
-          Click anywhere on the page to capture the first event.
-        </p>
+        <p class="feed-empty caption" id="feed-empty">Click anywhere on the page to capture the first event.</p>
         <footer class="popup-footer">
           <button type="button" class="btn btn-danger btn-block" id="stop">
             <svg class="icon"><use href="#i-square" /></svg>
@@ -144,16 +144,8 @@
             <p class="caption mono" id="failed-message"></p>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn btn-primary btn-lg btn-block"
-          id="retry"
-        >
-          Retry upload
-        </button>
-        <button type="button" class="btn btn-ghost btn-block" id="discard">
-          Discard session
-        </button>
+        <button type="button" class="btn btn-primary btn-lg btn-block" id="retry">Retry upload</button>
+        <button type="button" class="btn btn-ghost btn-block" id="discard">Discard session</button>
       </section>
 
       <!-- Saved -->
@@ -169,35 +161,18 @@
         </div>
         <div class="id-well">
           <span class="mono" id="saved-id"></span>
-          <button
-            type="button"
-            class="icon-btn"
-            id="copy-id"
-            aria-label="Copy session ID"
-            title="Copy session ID"
-          >
+          <button type="button" class="icon-btn" id="copy-id" aria-label="Copy session ID" title="Copy session ID">
             <svg class="icon icon-sm"><use href="#i-copy" /></svg>
           </button>
         </div>
-        <button
-          type="button"
-          class="btn btn-primary btn-lg btn-block"
-          id="open-session"
-        >
+        <button type="button" class="btn btn-primary btn-lg btn-block" id="open-session">
           Open in dashboard
           <svg class="icon"><use href="#i-arrow-up-right" /></svg>
         </button>
-        <button
-          type="button"
-          class="btn btn-ghost btn-block"
-          id="record-another"
-        >
-          Record another
-        </button>
+        <button type="button" class="btn btn-ghost btn-block" id="record-another">Record another</button>
       </section>
     </main>
 
-    <script src="env.js"></script>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

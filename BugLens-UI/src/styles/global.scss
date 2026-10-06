@@ -20,3 +20,32 @@ body,
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong, #7c776f) transparent;
+}
+
+/* ── WebKit Browsers (Chrome, Safari, Edge, Opera) ── */
+::-webkit-scrollbar {
+  width: 2px;
+  height: 2px; /* Thanh cuộn ngang */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-2, #c6c2ba);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong, #7c776f);
+}
+
+::selection {
+  background-color: var(--accent-subtle-border, #a3d6ca);
+  color: var(--fg-1, #1c1b19);
+}

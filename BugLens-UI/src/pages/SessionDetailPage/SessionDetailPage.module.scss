@@ -1,0 +1,200 @@
+// Session detail from the buglens-design skill (ui_kits/dashboard/SessionDetail.jsx):
+// header + timeline card + tabbed event log on the left, 380px inspector on the right.
+
+.center {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert {
+  margin: 20px;
+}
+
+// antd Splitter: main panel | draggable bar | inspector panel
+.page {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden !important; // only the event list scrolls
+}
+
+.inspectorPanel {
+  overflow: hidden !important; // the inspector scrolls its own body
+}
+
+// ── Header ──
+.header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 20px 0;
+}
+
+.heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ant-color-text);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.project {
+  margin: 0;
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+}
+
+.metaText {
+  color: var(--ant-color-text-tertiary);
+  font: 400 11px/1.6 var(--ant-font-family-code);
+}
+
+// ── Timeline card ──
+.timelineCard {
+  flex: none;
+  margin: 16px 20px 0;
+  box-shadow: none;
+
+  :global {
+    .ant-card-head {
+      min-height: 44px;
+      padding: 6px 12px 6px 16px;
+    }
+  }
+}
+
+.cardTitle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cardSubtitle {
+  color: var(--ant-color-text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+// ── Tabs (2px underline in the text color, not the accent) ──
+.tabs {
+  flex: none;
+  padding: 8px 20px 0;
+
+  :global {
+    .ant-tabs-nav {
+      margin: 0;
+    }
+
+    .ant-tabs-tab {
+      padding-block: 10px;
+    }
+
+    .ant-tabs-tab-btn {
+      color: var(--ant-color-text-secondary);
+      font-weight: 500;
+    }
+
+    .ant-tabs-tab-active .ant-tabs-tab-btn {
+      color: var(--ant-color-text) !important;
+    }
+
+    .ant-tabs-ink-bar {
+      background: var(--ant-color-text);
+    }
+  }
+}
+
+.tabLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tabCount {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--ant-color-fill-tertiary);
+  color: var(--ant-color-text-tertiary);
+  font: 400 11px/1.6 var(--ant-font-family-code);
+}
+
+// ── Type filter popover ──
+.typeFilter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.typeOption {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 100px;
+}
+
+.typeCount {
+  color: var(--ant-color-text-tertiary);
+  font: 400 11px/1 var(--ant-font-family-code);
+}
+
+// ── Event list: the only part that scrolls ──
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.empty {
+  margin-top: 32px;
+}
+
+.env {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  row-gap: 10px;
+  margin: 0;
+  padding: 20px;
+  font-size: 13px;
+
+  dt {
+    color: var(--ant-color-text-tertiary);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--ant-font-family-code);
+    font-size: 12px;
+    word-break: break-all;
+  }
+}

@@ -3,11 +3,13 @@ import {
   useEffect,
   useMemo,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { App, ConfigProvider } from "antd";
 import { darkTheme } from "@/theme/darkTheme";
 import { lightTheme } from "@/theme/lightTheme";
+import { darkBrandColors, lightBrandColors } from "@/theme/colors";
 import { ThemeContext, type ThemeMode } from "@/theme/ThemeContext";
 
 const STORAGE_KEY = "buglens-theme";
@@ -47,7 +49,12 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     <ThemeContext value={value}>
       <ConfigProvider theme={mode === "dark" ? darkTheme : lightTheme}>
         {/* antd <App> exposes theme colors as CSS variables (var(--ant-color-primary), ...) to everything inside */}
-        <App className="app-root">{children}</App>
+        <App
+          className="app-root"
+          style={(mode === "dark" ? darkBrandColors : lightBrandColors) as CSSProperties}
+        >
+          {children}
+        </App>
       </ConfigProvider>
     </ThemeContext>
   );
