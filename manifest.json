@@ -1,10 +1,21 @@
 {
   "manifest_version": 3,
   "name": "BugLens",
+  "description": "Capture and replay bug sessions to help devs, QA, and PMs reproduce errors instantly.",
   "version": "0.1.0",
   "permissions": ["storage", "tabs"],
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png"
+    }
   },
   "background": {
     "service_worker": "background.js"

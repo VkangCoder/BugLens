@@ -1,0 +1,22 @@
+// Global styles. Colors come from antd as CSS variables (see src/theme/colors.ts):
+// colorBgLayout → var(--ant-color-bg-layout), colorText → var(--ant-color-text), ...
+@use "fonts";
+
+html,
+body,
+#root,
+.app-root {
+  height: 100%;
+}
+
+.app-root {
+  background: var(--ant-color-bg-layout);
+  color: var(--ant-color-text);
+}
+
+// IDs, URLs, timestamps, selectors
+.mono {
+  font-family: var(--ant-font-family-code);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}

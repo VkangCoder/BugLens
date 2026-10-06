@@ -1,0 +1,14 @@
+.root {
+  height: 100vh;
+}
+.sider {
+  border-right: 1px solid var(--ant-color-border-secondary);
+}
+.header {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+.content {
+  overflow: auto;
+}

@@ -4,6 +4,7 @@ import { Table, Spin, Alert, Tag, Tooltip, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { getSessions } from "@/api/sessions";
 import type { SessionResponse } from "@/types/session";
+import styles from "./SessionListPage.module.scss";
 
 const { Text } = Typography;
 
@@ -70,6 +71,7 @@ export default function SessionListPage() {
         <Tag color="blue">{events?.length ?? 0} events</Tag>
       ),
     },
+
     {
       title: "Started At",
       dataIndex: "startedAt",
@@ -85,12 +87,28 @@ export default function SessionListPage() {
           year: "numeric",
         }),
     },
+    {
+      title: "Duration",
+      key: "duration",
+      width: 100,
+      render: (_, record) => {
+        if (!record.endedAt) return <Text type="secondary">—</Text>;
+        const ms =
+          new Date(record.endedAt).getTime() -
+          new Date(record.startedAt).getTime();
+        return `${(ms / 1000).toFixed(1)}s`;
+      },
+    },
   ];
 
   if (isLoading)
-    return <Spin size="large" className="flex justify-center p-8" />;
+    return (
+      <div className={styles.loading}>
+        <Spin size="large" />
+      </div>
+    );
   if (isError)
-    return <Alert type="error" message="Failed to load sessions" showIcon />;
+    return <Alert type="error" title="Failed to load sessions" showIcon />;
 
   return (
     <Table<SessionResponse>
