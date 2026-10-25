@@ -1,13 +1,16 @@
 import { getSessionById } from "@/api/sessions";
+import { useTheme } from "@/theme/useTheme";
 import { useQuery } from "@tanstack/react-query";
-import { App, Breadcrumb, Input, type InputRef } from "antd";
-import { ChevronRight, Search } from "lucide-react";
+import { App, Breadcrumb, Button, Input, Tooltip, type InputRef } from "antd";
+import { ChevronRight, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useMatch, useNavigate, useSearchParams } from "react-router";
 import styles from "./Topbar.module.scss";
+import UserMenu from "./UserMenu";
 
 const SESSION_ID = /^[a-f0-9]{24}$/i; // MongoDB ObjectId
 const IS_MAC = navigator.platform.toUpperCase().includes("MAC");
+const ICON = { size: 16, strokeWidth: 1.5 };
 
 function pathOf(url: string): string {
   try {
@@ -16,12 +19,12 @@ function pathOf(url: string): string {
   } catch {
     return url;
   }
-  console.log();
 }
 
 function useCrumbs(): { title: ReactNode }[] {
   const [searchParams] = useSearchParams();
   const detail = useMatch("/sessions/:id");
+  const admin = useMatch("/admin/:section");
   const id = detail?.params.id;
 
   const { data: session } = useQuery({
@@ -30,7 +33,7 @@ function useCrumbs(): { title: ReactNode }[] {
     enabled: !!id,
   });
 
-  const sessions = { title: <Link to="/">Sessions</Link> };
+  const sessions = { title: <Link to='/'>Sessions</Link> };
 
   if (id) {
     return [
@@ -38,16 +41,16 @@ function useCrumbs(): { title: ReactNode }[] {
       ...(session
         ? [
             {
-              title: (
-                <span className={styles.crumbMuted}>
-                  {pathOf(session.initialUrl)}
-                </span>
-              ),
+              title: <span className={styles.crumbMuted}>{pathOf(session.initialUrl)}</span>,
             },
           ]
         : []),
       { title: <span className={styles.crumbMono}>{id}</span> },
     ];
+  }
+
+  if (admin) {
+    return [{ title: "Admin" }, { title: admin.params.section === "users" ? "Users" : "Projects" }];
   }
 
   if (searchParams.get("hasErrors") === "true") {
@@ -63,6 +66,7 @@ export default function Topbar({ right }: { right?: ReactNode }) {
   const inputRef = useRef<InputRef>(null);
   const [query, setQuery] = useState("");
   const crumbs = useCrumbs();
+  const { isDark, toggleMode } = useTheme();
 
   // Ctrl+K / ⌘K focuses "Jump to session"
   useEffect(() => {
@@ -91,28 +95,20 @@ export default function Topbar({ right }: { right?: ReactNode }) {
     <div className={styles.topbar}>
       <Breadcrumb
         className={styles.breadcrumb}
-        separator={
-          <ChevronRight
-            size={14}
-            strokeWidth={1.5}
-            className={styles.separator}
-          />
-        }
+        separator={<ChevronRight size={14} strokeWidth={1.5} className={styles.separator} />}
         items={crumbs}
       />
 
       <Input
         ref={inputRef}
-        size="small"
+        size='small'
         className={styles.jump}
-        placeholder="Jump to session…"
+        placeholder='Jump to session…'
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onPressEnter={jump}
         onKeyDown={(e) => e.key === "Escape" && inputRef.current?.blur()}
-        prefix={
-          <Search size={14} strokeWidth={1.5} className={styles.searchIcon} />
-        }
+        prefix={<Search size={14} strokeWidth={1.5} className={styles.searchIcon} />}
         suffix={
           <span className={styles.kbdGroup}>
             <kbd className={styles.kbd}>{IS_MAC ? "⌘" : "Ctrl"}</kbd>
@@ -121,6 +117,16 @@ export default function Topbar({ right }: { right?: ReactNode }) {
         }
       />
 
+      <Tooltip title={isDark ? "Switch to light theme" : "Switch to dark theme"}>
+        <Button
+          type='text'
+          size='small'
+          icon={isDark ? <Sun {...ICON} /> : <Moon {...ICON} />}
+          onClick={toggleMode}
+          aria-label='Toggle theme'
+        />
+      </Tooltip>
+      <UserMenu />
       {right}
     </div>
   );

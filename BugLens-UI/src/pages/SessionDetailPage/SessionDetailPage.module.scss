@@ -1,6 +1,3 @@
-// Session detail from the buglens-design skill (ui_kits/dashboard/SessionDetail.jsx):
-// header + timeline card + tabbed event log on the left, 380px inspector on the right.
-
 .center {
   display: flex;
   flex: 1;
@@ -12,7 +9,6 @@
   margin: 20px;
 }
 
-// antd Splitter: main panel | draggable bar | inspector panel
 .page {
   flex: 1;
   min-height: 0;
@@ -24,14 +20,13 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow: hidden !important; // only the event list scrolls
+  overflow: hidden !important;
 }
 
 .inspectorPanel {
-  overflow: hidden !important; // the inspector scrolls its own body
+  overflow: hidden !important;
 }
 
-// ── Header ──
 .header {
   display: flex;
   flex: none;
@@ -76,7 +71,6 @@
   font: 400 11px/1.6 var(--ant-font-family-code);
 }
 
-// ── Timeline card ──
 .timelineCard {
   flex: none;
   margin: 16px 20px 0;
@@ -104,7 +98,6 @@
   font-weight: 400;
 }
 
-// ── Tabs (2px underline in the text color, not the accent) ──
 .tabs {
   flex: none;
   padding: 8px 20px 0;
@@ -147,12 +140,20 @@
   font: 400 11px/1.6 var(--ant-font-family-code);
 }
 
-// ── Type filter popover ──
 .typeFilter {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 140px;
+}
+
+.typeFilterFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.06));
 }
 
 .typeOption {
@@ -168,7 +169,6 @@
   font: 400 11px/1 var(--ant-font-family-code);
 }
 
-// ── Event list: the only part that scrolls ──
 .list {
   flex: 1;
   min-height: 0;

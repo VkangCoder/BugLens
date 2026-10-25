@@ -1,22 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Alert,
-  App,
-  Button,
-  Card,
-  Checkbox,
-  Empty,
-  Popover,
-  Spin,
-  Splitter,
-  Tabs,
-  Tag,
-  Tooltip,
-} from "antd";
+import { Alert, App, Button, Card, Checkbox, Empty, Popover, Spin, Splitter, Tabs, Tag, Tooltip } from "antd";
 import { ListFilter, PanelRight, Trash2 } from "lucide-react";
 import { deleteSession, getSessionById } from "@/api/sessions";
+import { useAuth } from "@/auth/useAuth";
 import EventTag from "@/components/EventTag";
 import StatusBadge from "@/components/StatusBadge";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
@@ -55,20 +43,11 @@ export default function SessionDetailPage() {
   if (isLoading)
     return (
       <div className={styles.center}>
-        <Spin size="large" />
+        <Spin size='large' />
       </div>
     );
-  if (isError || !data)
-    return (
-      <Alert
-        className={styles.alert}
-        type="error"
-        title="Failed to load session."
-        showIcon
-      />
-    );
+  if (isError || !data) return <Alert className={styles.alert} type='error' title='Failed to load session.' showIcon />;
 
-  // key: reset selection and playback when another session is opened
   return <SessionDetail key={data.id} session={data} />;
 }
 
@@ -76,14 +55,12 @@ function SessionDetail({ session }: { session: SessionResponse }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { modal, message } = App.useApp();
+  const { isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
 
   const start = new Date(session.startedAt).getTime();
   const events = session.events;
-  const offsets = useMemo(
-    () => events.map((e) => new Date(e.timestamp).getTime() - start),
-    [events, start],
-  );
+  const offsets = useMemo(() => events.map((e) => new Date(e.timestamp).getTime() - start), [events, start]);
   const duration = Math.max(
     session.endedAt ? new Date(session.endedAt).getTime() - start : 0,
     offsets.length ? Math.max(...offsets) : 0,
@@ -94,13 +71,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
   const firstError = events.findIndex((e) => e.type === "error");
   const fromUrl = Number(searchParams.get("event")) - 1;
   const initial =
-    fromUrl >= 0 && fromUrl < events.length
-      ? fromUrl
-      : firstError >= 0
-        ? firstError
-        : events.length
-          ? 0
-          : null;
+    fromUrl >= 0 && fromUrl < events.length ? fromUrl : firstError >= 0 ? firstError : events.length ? 0 : null;
 
   const [pickedEvent, setPickedEvent] = useState<number | null>(initial);
   const [time, setTime] = useState(initial !== null ? offsets[initial] : 0);
@@ -138,55 +109,39 @@ function SessionDetail({ session }: { session: SessionResponse }) {
   // Advance the playhead every 100ms while playing
   useEffect(() => {
     if (!playing) return;
-    const timer = setInterval(
-      () => setTime((t) => Math.min(duration, t + 100)),
-      100,
-    );
+    const timer = setInterval(() => setTime((t) => Math.min(duration, t + 100)), 100);
     return () => clearInterval(timer);
   }, [playing, duration]);
 
-  // ── Filters ──
+  // Filters
   const [tab, setTab] = useState<TabKey>("events");
   const [visibleTypes, setVisibleTypes] = useState<BugEventType[]>(EVENT_TYPES);
 
-  const listTypes =
-    tab === "env" ? [] : TAB_TYPES[tab].filter((t) => visibleTypes.includes(t));
-  const listed = events
-    .map((event, index) => ({ event, index }))
-    .filter(({ event }) => listTypes.includes(event.type));
+  const listTypes = tab === "env" ? [] : TAB_TYPES[tab].filter((t) => visibleTypes.includes(t));
+  const listed = events.map((event, index) => ({ event, index })).filter(({ event }) => listTypes.includes(event.type));
   const timelineItems = events.map((event, index) => ({
     type: event.type,
     offset: offsets[index],
     index,
   }));
-  const visibleTimeline = timelineItems.filter((item) =>
-    visibleTypes.includes(item.type),
-  );
+  const visibleTimeline = timelineItems.filter((item) => visibleTypes.includes(item.type));
 
   function step(direction: -1 | 1) {
     if (!listed.length) return;
     const position = listed.findIndex((item) => item.index === selected);
-    const next =
-      listed[Math.max(0, Math.min(listed.length - 1, position + direction))];
+    const next = listed[Math.max(0, Math.min(listed.length - 1, position + direction))];
     select(next.index);
   }
 
-  const countOf = (types: BugEventType[]) =>
-    events.filter((e) => types.includes(e.type)).length;
+  const countOf = (types: BugEventType[]) => events.filter((e) => types.includes(e.type)).length;
 
-  // ── Inspector panel ──
-  const [inspectorOpen, setInspectorOpen] = useState(
-    () => window.innerWidth >= 1100,
-  );
+  // Inspector panel
+  const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 1100);
   // Width set by dragging the splitter; double-click the bar to reset
-  const [inspectorWidth, setInspectorWidth] = useLocalStorage(
-    "buglens-inspector-width",
-    INSPECTOR_DEFAULT_WIDTH,
-  );
-  const showInspector =
-    inspectorOpen && selected !== null && !!events[selected];
+  const [inspectorWidth, setInspectorWidth] = useLocalStorage("buglens-inspector-width", INSPECTOR_DEFAULT_WIDTH);
+  const showInspector = inspectorOpen && selected !== null && !!events[selected];
 
-  // ── Delete ──
+  // Delete
   const deleteMutation = useMutation({
     mutationFn: () => deleteSession(session.id),
     onSuccess: () => {
@@ -207,28 +162,41 @@ function SessionDetail({ session }: { session: SessionResponse }) {
     });
   }
 
+  const allSelected = visibleTypes.length === EVENT_TYPES.length;
+
   const typeFilter = (
     <Popover
-      trigger="click"
-      placement="bottomRight"
+      trigger='click'
+      placement='bottomRight'
       content={
-        <Checkbox.Group
-          className={styles.typeFilter}
-          value={visibleTypes}
-          onChange={(values) => setVisibleTypes(values as BugEventType[])}
-          options={EVENT_TYPES.map((type) => ({
-            value: type,
-            label: (
-              <span className={styles.typeOption}>
-                <EventTag type={type} />
-                <span className={styles.typeCount}>{countOf([type])}</span>
-              </span>
-            ),
-          }))}
-        />
+        <div className={styles.typeFilterPanel}>
+          <Checkbox.Group
+            className={styles.typeFilter}
+            value={visibleTypes}
+            onChange={(values) => setVisibleTypes(values as BugEventType[])}
+            options={EVENT_TYPES.map((type) => ({
+              value: type,
+              label: (
+                <span className={styles.typeOption}>
+                  <EventTag type={type} />
+                  <span className={styles.typeCount}>{countOf([type])}</span>
+                </span>
+              ),
+            }))}
+          />
+
+          <div className={styles.typeFilterFooter}>
+            <Button size='small' type='text' disabled={visibleTypes.length === 0} onClick={() => setVisibleTypes([])}>
+              Clear
+            </Button>
+            <Button size='small' type='link' disabled={allSelected} onClick={() => setVisibleTypes([...EVENT_TYPES])}>
+              Reset
+            </Button>
+          </div>
+        </div>
       }
     >
-      <Button size="small" type="text" icon={<ListFilter {...ICON} />}>
+      <Button size='small' type='text' icon={<ListFilter {...ICON} />}>
         Types {visibleTypes.length}/{EVENT_TYPES.length}
       </Button>
     </Popover>
@@ -260,28 +228,23 @@ function SessionDetail({ session }: { session: SessionResponse }) {
               <StatusBadge errorCount={errorCount} />
               <Tag className={styles.project}>{session.projectId}</Tag>
               <span className={styles.metaText}>
-                {session.browser.name} {session.browser.version} ·{" "}
-                {session.viewport.width} × {session.viewport.height} ·{" "}
-                {formatDuration(session.startedAt, session.endedAt)} ·{" "}
-                {formatDateTime(session.startedAt)}
+                {session.browser.name} {session.browser.version} · {session.viewport.width} × {session.viewport.height}{" "}
+                · {formatDuration(session.startedAt, session.endedAt)} · {formatDateTime(session.startedAt)}
               </span>
             </div>
           </div>
-          <Tooltip title="Delete session">
-            <Button
-              size="small"
-              icon={<Trash2 {...ICON} />}
-              onClick={confirmDelete}
-              aria-label="Delete session"
-            />
-          </Tooltip>
+          {isAdmin && (
+            <Tooltip title='Delete session'>
+              <Button size='small' icon={<Trash2 {...ICON} />} onClick={confirmDelete} aria-label='Delete session' />
+            </Tooltip>
+          )}
           <Tooltip title={inspectorOpen ? "Hide inspector" : "Show inspector"}>
             <Button
-              size="small"
+              size='small'
               type={inspectorOpen ? "default" : "text"}
               icon={<PanelRight {...ICON} />}
               onClick={() => setInspectorOpen((open) => !open)}
-              aria-label="Toggle inspector"
+              aria-label='Toggle inspector'
               aria-pressed={inspectorOpen}
             />
           </Tooltip>
@@ -289,7 +252,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
 
         {/* ── Timeline ── */}
         <Card
-          size="small"
+          size='small'
           className={styles.timelineCard}
           title={
             <span className={styles.cardTitle}>
@@ -299,41 +262,26 @@ function SessionDetail({ session }: { session: SessionResponse }) {
               </span>
             </span>
           }
-          extra={
-            <PlayerBar
-              time={time}
-              duration={duration}
-              playing={playing}
-              onPlay={togglePlay}
-              onStep={step}
-            />
-          }
+          extra={<PlayerBar time={time} duration={duration} playing={playing} onPlay={togglePlay} onStep={step} />}
         >
           {visibleTimeline.length ? (
             <Timeline
               items={visibleTimeline}
               duration={duration}
               playhead={time}
-              selected={
-                selected === null
-                  ? null
-                  : visibleTimeline.findIndex((item) => item.index === selected)
-              }
+              selected={selected === null ? null : visibleTimeline.findIndex((item) => item.index === selected)}
               onSeek={setTime}
               onSelect={(i) => select(visibleTimeline[i].index)}
             />
           ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No events of the selected types."
-            />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No events of the selected types.' />
           )}
         </Card>
 
         {/* ── Event log ── */}
         <Tabs
           className={styles.tabs}
-          size="small"
+          size='small'
           activeKey={tab}
           onChange={(key) => setTab(key as TabKey)}
           tabBarExtraContent={tab === "env" ? null : typeFilter}
@@ -358,23 +306,11 @@ function SessionDetail({ session }: { session: SessionResponse }) {
                 ["Session ID", session.id],
                 ["Project", session.projectId],
                 ["Initial URL", session.initialUrl],
-                [
-                  "Browser",
-                  `${session.browser.name} ${session.browser.version}`,
-                ],
-                [
-                  "Viewport",
-                  `${session.viewport.width} × ${session.viewport.height}`,
-                ],
+                ["Browser", `${session.browser.name} ${session.browser.version}`],
+                ["Viewport", `${session.viewport.width} × ${session.viewport.height}`],
                 ["Started", formatDateTime(session.startedAt)],
-                [
-                  "Ended",
-                  session.endedAt ? formatDateTime(session.endedAt) : "—",
-                ],
-                [
-                  "Duration",
-                  formatDuration(session.startedAt, session.endedAt),
-                ],
+                ["Ended", session.endedAt ? formatDateTime(session.endedAt) : "—"],
+                ["Duration", formatDuration(session.startedAt, session.endedAt)],
               ].map(([label, value]) => (
                 <EnvRow key={label} label={label} value={value} />
               ))}
@@ -391,11 +327,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
               />
             ))
           ) : (
-            <Empty
-              className={styles.empty}
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No events here."
-            />
+            <Empty className={styles.empty} image={Empty.PRESENTED_IMAGE_SIMPLE} description='No events here.' />
           )}
         </div>
       </Splitter.Panel>
@@ -407,11 +339,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
           max={INSPECTOR_MAX_WIDTH}
           className={styles.inspectorPanel}
         >
-          <Inspector
-            event={events[selected!] as BugEvent}
-            index={selected!}
-            offset={offsets[selected!]}
-          />
+          <Inspector event={events[selected!] as BugEvent} index={selected!} offset={offsets[selected!]} />
         </Splitter.Panel>
       )}
     </Splitter>

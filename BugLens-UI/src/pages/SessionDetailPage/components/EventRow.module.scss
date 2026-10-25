@@ -1,4 +1,3 @@
-// buglens-design EventRow: 32px row, mono offsets, selection = accent tint + 2px inset bar
 .row {
   display: grid;
   grid-template-columns: 32px 80px 76px minmax(0, 1fr);

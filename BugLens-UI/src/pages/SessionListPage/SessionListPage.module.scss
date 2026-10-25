@@ -107,7 +107,27 @@
 .tableArea {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+.tableWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pager {
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--ant-color-border-secondary);
+
+  :global(.ant-pagination) {
+    margin: 0 !important;
+  }
 }
 
 .table {
@@ -118,9 +138,12 @@
       border-radius: 0;
       background: transparent;
     }
-
     .ant-table-container {
       border-radius: 0 !important;
+    }
+
+    .ant-table-header {
+      border-radius: unset;
     }
 
     // Header: 32px, uppercase mono overline
@@ -159,11 +182,7 @@
     // Selected: a light accent tint (accent-subtle in the skill)
     .ant-table-tbody > tr.ant-table-row-selected > td,
     .ant-table-tbody > tr.ant-table-row-selected:hover > td {
-      background: color-mix(
-        in srgb,
-        var(--ant-color-primary) 10%,
-        transparent
-      ) !important;
+      background: color-mix(in srgb, var(--ant-color-primary) 10%, transparent) !important;
     }
 
     // 20px page gutter on the outer columns (not on the "No sessions" row)
@@ -173,11 +192,6 @@
 
     tr:not(.ant-table-placeholder) > .ant-table-cell:last-child {
       padding-right: 20px !important;
-    }
-
-    .ant-pagination {
-      margin: 0 !important;
-      padding: 12px 20px;
     }
   }
 }

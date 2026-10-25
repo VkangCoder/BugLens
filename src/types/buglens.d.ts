@@ -75,13 +75,7 @@ interface BugErrorEvent extends BugEventBase {
 
 type ConsoleLevel = "log" | "info" | "warn" | "error" | "debug";
 
-type BugEvent =
-  | BugClickEvent
-  | BugInputEvent
-  | BugNavigationEvent
-  | BugNetworkEvent
-  | BugConsoleEvent
-  | BugErrorEvent;
+type BugEvent = BugClickEvent | BugInputEvent | BugNavigationEvent | BugNetworkEvent | BugConsoleEvent | BugErrorEvent;
 
 type BugEventType = BugEvent["type"];
 
@@ -156,4 +150,5 @@ interface BridgeMessage {
 interface EnvConfig {
   API_BASE_URL: string;
   DASHBOARD_URL: string;
+  API_KEY: string;
 }

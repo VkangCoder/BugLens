@@ -1,7 +1,7 @@
 import { captureConfig } from "./config.js";
 import { loadEnv } from "./env.js";
 
-// ── Recording filters (see config.ts) ──
+// Recording filters (config.ts)
 function shouldKeep(event: BugEvent): boolean {
   if (!captureConfig.events[event.type]) return false;
 
@@ -25,8 +25,6 @@ function applyMasking(event: BugEvent): BugEvent {
   return event;
 }
 
-// Events can arrive in bursts (network, console). Appending one at a time
-// avoids two get/set calls overwriting each other and losing events.
 let writeQueue: Promise<void> = Promise.resolve();
 
 function appendEvent(event: BugEvent): void {
@@ -39,9 +37,8 @@ function appendEvent(event: BugEvent): void {
     .catch((err: unknown) => console.error("Failed to store event:", err));
 }
 
-// ── Session metadata ──
+// Session metadata
 function getBrowserInfo(): BrowserInfo {
-  // e.g. [{ brand: "Google Chrome", version: "150" }, { brand: "Chromium", ... }, { brand: "Not=A?Brand", ... }]
   const brands = (navigator as Navigator & { userAgentData?: { brands: { brand: string; version: string }[] } })
     .userAgentData?.brands;
   const main =
@@ -53,7 +50,7 @@ function getBrowserInfo(): BrowserInfo {
   return { name: "Chrome", version: match?.[1] ?? "unknown" };
 }
 
-// ── Upload ──
+// Upload
 function uploadSession(): void {
   chrome.storage.local.get(["session", "events"], (raw) => {
     const { session, events } = raw as StorageShape;
@@ -64,7 +61,6 @@ function uploadSession(): void {
     }
 
     const body = {
-      projectId: captureConfig.projectId,
       startedAt: session.startedAt,
       endedAt: session.endedAt ?? new Date().toISOString(),
       initialUrl: session.initialUrl,
@@ -74,18 +70,23 @@ function uploadSession(): void {
     };
 
     loadEnv()
-      .then((env) =>
-        fetch(`${env.API_BASE_URL}/api/v1/sessions`, {
+      .then((env) => {
+        if (!env.API_KEY) throw new Error("Missing API_KEY in extension .env");
+        return fetch(`${env.API_BASE_URL}/api/v1/sessions`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": env.API_KEY,
+          },
           body: JSON.stringify(body),
-        }),
-      )
+        });
+      })
       .then(async (res) => {
+        if (res.status === 401) throw new Error("API key is invalid or revoked (401). Ask your admin for a new key.");
         if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
 
         const created = (await res.json()) as { id: string };
-        console.log("Session uploaded");
+        // console.log("Session uploaded");
 
         chrome.storage.local.set({
           isUploading: false,
@@ -111,7 +112,7 @@ function uploadSession(): void {
   });
 }
 
-// ── Messages from content.ts and popup.ts ──
+//  Messages from content.ts and popup.ts
 chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
   switch (message.type) {
     case "EVENT":
@@ -145,7 +146,7 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
           events: captureConfig.events.navigation ? [initial] : [],
           session,
         } satisfies StorageShape);
-        console.log("Recording started");
+        // console.log("Recording started");
       });
       break;
 

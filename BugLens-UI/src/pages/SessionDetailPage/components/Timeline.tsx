@@ -5,7 +5,7 @@ import styles from "./Timeline.module.scss";
 
 export interface TimelineItem {
   type: BugEventType;
-  offset: number; // ms since session start
+  offset: number;
 }
 
 interface TimelineProps {
@@ -17,41 +17,25 @@ interface TimelineProps {
   onSelect: (index: number) => void;
 }
 
-export default function Timeline({
-  items,
-  duration,
-  playhead,
-  selected,
-  onSeek,
-  onSelect,
-}: TimelineProps) {
+export default function Timeline({ items, duration, playhead, selected, onSeek, onSelect }: TimelineProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(600);
 
   useEffect(() => {
     if (!trackRef.current) return;
-    const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry.contentRect.width),
-    );
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
     observer.observe(trackRef.current);
     return () => observer.disconnect();
   }, []);
 
   const total = Math.max(duration, 1000);
-  const lanes = EVENT_TYPES.filter((type) =>
-    items.some((item) => item.type === type),
-  );
+  const lanes = EVENT_TYPES.filter((type) => items.some((item) => item.type === type));
   const ticks = Math.max(1, Math.min(8, Math.floor(width / 90)));
   const percent = (ms: number) => `${Math.min(100, (ms / total) * 100)}%`;
 
   function seek(e: MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
-    onSeek(
-      Math.max(
-        0,
-        Math.min(total, ((e.clientX - rect.left) / rect.width) * total),
-      ),
-    );
+    onSeek(Math.max(0, Math.min(total, ((e.clientX - rect.left) / rect.width) * total)));
   }
 
   return (
@@ -72,12 +56,7 @@ export default function Timeline({
               className={styles.tick}
               style={{
                 left: `${(i / ticks) * 100}%`,
-                transform:
-                  i === ticks
-                    ? "translateX(-100%)"
-                    : i
-                      ? "translateX(-50%)"
-                      : "none",
+                transform: i === ticks ? "translateX(-100%)" : i ? "translateX(-50%)" : "none",
               }}
             >
               {formatOffset((total * i) / ticks).slice(0, 5)}

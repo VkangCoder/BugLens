@@ -1,48 +1,26 @@
-import { useEffect, useState } from "react";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { useNavigate, useSearchParams } from "react-router";
-import {
-  Alert,
-  App,
-  Button,
-  Empty,
-  Input,
-  Segmented,
-  Select,
-  Table,
-  Tooltip,
-  Typography,
-} from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { Check, Copy, Download, Search, Trash2 } from "lucide-react";
 import { deleteSession, getSessions } from "@/api/sessions";
+import { useAuth } from "@/auth/useAuth";
 import { useElementHeight } from "@/hooks/useElementHeight";
 import { useSessionCount } from "@/hooks/useSessionCount";
 import type { SessionSort, SessionSummary } from "@/types/session";
-import {
-  formatDateTime,
-  formatDuration,
-  formatRelative,
-  hostAndPath,
-} from "@/utils/format";
+import { formatDateTime, formatDuration, formatRelative, hostAndPath } from "@/utils/format";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, App, Button, Empty, Input, Pagination, Segmented, Select, Table, Tooltip, Typography } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import { Check, Copy, Download, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import styles from "./SessionListPage.module.scss";
 
 type Scope = "all" | "errors";
 
-const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 10;
 
-// Table top border (1px) + header (32px + 1px border) + pagination bar (24px + 2 × 12px padding)
 const TABLE_CHROME_HEIGHT = 34 + 48;
 const ICON = { size: 14, strokeWidth: 1.5 };
 
 const { Text } = Typography;
 
-// MongoDB IDs are 24 characters: show "6ac3d4ce…f21b", copy the full value
 function shortId(id: string): string {
   return id.length > 14 ? `${id.slice(0, 8)}…${id.slice(-4)}` : id;
 }
@@ -61,15 +39,14 @@ export default function SessionListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { message, modal } = App.useApp();
+  const { isAdmin } = useAuth();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const pageSize = Number(searchParams.get("pageSize")) || DEFAULT_PAGE_SIZE;
-  const scope: Scope =
-    searchParams.get("hasErrors") === "true" ? "errors" : "all";
+  const scope: Scope = searchParams.get("hasErrors") === "true" ? "errors" : "all";
   const search = searchParams.get("q") ?? "";
-  const sort: SessionSort =
-    searchParams.get("sort") === "oldest" ? "oldest" : "newest";
+  const sort: SessionSort = searchParams.get("sort") === "oldest" ? "oldest" : "newest";
 
   function updateParams(next: {
     page?: number;
@@ -84,18 +61,14 @@ export default function SessionListPage() {
     if (merged.scope === "errors") params.set("hasErrors", "true");
     if (merged.sort !== "newest") params.set("sort", merged.sort);
     if (merged.page > 1) params.set("page", String(merged.page));
-    if (merged.pageSize !== DEFAULT_PAGE_SIZE)
-      params.set("pageSize", String(merged.pageSize));
+    if (merged.pageSize !== DEFAULT_PAGE_SIZE) params.set("pageSize", String(merged.pageSize));
     setSearchParams(params);
   }
 
   const [searchInput, setSearchInput] = useState(search);
   useEffect(() => {
     if (searchInput.trim() === search) return;
-    const timer = setTimeout(
-      () => updateParams({ search: searchInput.trim(), page: 1 }),
-      300,
-    );
+    const timer = setTimeout(() => updateParams({ search: searchInput.trim(), page: 1 }), 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchInput]);
@@ -126,14 +99,11 @@ export default function SessionListPage() {
   const deleteMutation = useMutation({
     mutationFn: (ids: string[]) => Promise.all(ids.map(deleteSession)),
     onSuccess: (_, ids) => {
-      message.success(
-        `${ids.length} ${ids.length === 1 ? "session" : "sessions"} deleted.`,
-      );
+      message.success(`${ids.length} ${ids.length === 1 ? "session" : "sessions"} deleted.`);
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
     },
-    onError: () =>
-      message.error("Delete failed. Nothing was removed on your side."),
+    onError: () => message.error("Delete failed. Nothing was removed on your side."),
   });
 
   function confirmDelete() {
@@ -171,10 +141,7 @@ export default function SessionListPage() {
               className={styles.sessionId}
               copyable={{
                 text: s.id,
-                icon: [
-                  <Copy key="copy" {...ICON} />,
-                  <Check key="done" {...ICON} />,
-                ],
+                icon: [<Copy key='copy' {...ICON} />, <Check key='done' {...ICON} />],
                 tooltips: ["Copy session ID", "Copied"],
               }}
             >
@@ -202,19 +169,13 @@ export default function SessionListPage() {
       dataIndex: "eventCount",
       key: "events",
       width: 100,
-      render: (count: number) => (
-        <span className={styles.mono}>{count} events</span>
-      ),
+      render: (count: number) => <span className={styles.mono}>{count} events</span>,
     },
     {
       title: "Duration",
       key: "duration",
       width: 90,
-      render: (_, s) => (
-        <span className={styles.mono}>
-          {formatDuration(s.startedAt, s.endedAt)}
-        </span>
-      ),
+      render: (_, s) => <span className={styles.mono}>{formatDuration(s.startedAt, s.endedAt)}</span>,
     },
     {
       title: "Recorded",
@@ -224,7 +185,7 @@ export default function SessionListPage() {
       align: "right",
       fixed: "right",
       render: (startedAt: string) => (
-        <Tooltip title={formatDateTime(startedAt)} placement="left">
+        <Tooltip title={formatDateTime(startedAt)} placement='left'>
           <span className={styles.recorded}>{formatRelative(startedAt)}</span>
         </Tooltip>
       ),
@@ -236,32 +197,25 @@ export default function SessionListPage() {
       <header className={styles.header}>
         <div className={styles.heading}>
           <h1 className={styles.title}>Sessions</h1>
-          <p className={styles.subtitle}>
-            Recorded by the BugLens extension across acme-web.
-          </p>
+          <p className={styles.subtitle}>Recorded by the BugLens extension across acme-web.</p>
         </div>
-        <Button
-          size="small"
-          icon={<Download {...ICON} />}
-          onClick={exportPage}
-          disabled={!data?.items.length}
-        >
+        <Button size='small' icon={<Download {...ICON} />} onClick={exportPage} disabled={!data?.items.length}>
           Export
         </Button>
       </header>
 
       <div className={styles.toolbar}>
         <Input
-          size="small"
+          size='small'
           allowClear
           className={styles.search}
-          placeholder="Filter by URL or session ID"
+          placeholder='Filter by URL or session ID'
           prefix={<Search {...ICON} className={styles.searchIcon} />}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
         <Segmented<Scope>
-          size="small"
+          size='small'
           value={scope}
           onChange={(value) => updateParams({ scope: value, page: 1 })}
           options={[
@@ -269,10 +223,7 @@ export default function SessionListPage() {
               value: "all",
               label: (
                 <span className={styles.segment}>
-                  All{" "}
-                  <span className={styles.segmentCount}>
-                    {totalCount ?? ""}
-                  </span>
+                  All <span className={styles.segmentCount}>{totalCount ?? ""}</span>
                 </span>
               ),
             },
@@ -280,28 +231,25 @@ export default function SessionListPage() {
               value: "errors",
               label: (
                 <span className={styles.segment}>
-                  Errors{" "}
-                  <span className={styles.segmentCount}>
-                    {errorCount ?? ""}
-                  </span>
+                  Errors <span className={styles.segmentCount}>{errorCount ?? ""}</span>
                 </span>
               ),
             },
           ]}
         />
         <div className={styles.toolbarSpacer} />
-        {/* <Tooltip title="Coming soon">
+        <Tooltip title='Coming soon'>
           <Select
-            size="small"
+            size='small'
             disabled
             prefix={<span className={styles.selectPrefix}>Env</span>}
-            value="all"
+            value='all'
             options={[{ value: "all", label: "all" }]}
             className={styles.select}
           />
-        </Tooltip> */}
+        </Tooltip>
         <Select<SessionSort>
-          size="small"
+          size='small'
           prefix={<span className={styles.selectPrefix}>Sort</span>}
           value={sort}
           onChange={(value) => updateParams({ sort: value, page: 1 })}
@@ -312,83 +260,73 @@ export default function SessionListPage() {
           className={styles.select}
           popupMatchSelectWidth={false}
         />
-        {selectedIds.length > 0 && (
-          <Button
-            size="small"
-            danger
-            icon={<Trash2 {...ICON} />}
-            onClick={confirmDelete}
-          >
+        {isAdmin && selectedIds.length > 0 && (
+          <Button size='small' danger icon={<Trash2 {...ICON} />} onClick={confirmDelete}>
             Delete {selectedIds.length}
           </Button>
         )}
       </div>
 
       {isError ? (
-        <Alert
-          className={styles.alert}
-          type="error"
-          title="Failed to load sessions."
-          showIcon
-        />
+        <Alert className={styles.alert} type='error' title='Failed to load sessions.' showIcon />
       ) : (
         <div ref={tableAreaRef} className={styles.tableArea}>
-          <Table<SessionSummary>
-            className={styles.table}
-            columns={columns}
-            dataSource={data?.items}
-            rowKey="id"
-            size="small"
-            loading={isFetching}
-            tableLayout="fixed"
-            scroll={{ y: bodyHeight }}
-            rowSelection={{
-              selectedRowKeys: selectedIds,
-              onChange: (keys) => setSelectedIds(keys as string[]),
-              columnWidth: 44,
-            }}
-            locale={{
-              emptyText: search ? (
-                `No sessions match “${search}”.`
-              ) : scope === "errors" ? (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No sessions with errors."
-                ></Empty>
-              ) : (
-                <Empty
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  description="No sessions yet."
-                ></Empty>
-              ),
-            }}
-            pagination={{
-              current: page,
-              pageSize,
-              total: data?.totalCount,
-              size: "small",
-              showSizeChanger: true,
-              showTotal: (total) => `${total} sessions`,
-              onChange: (nextPage, nextPageSize) =>
+          <div className={styles.tableWrap}>
+            <Table<SessionSummary>
+              className={styles.table}
+              columns={columns}
+              dataSource={data?.items}
+              rowKey='id'
+              size='small'
+              loading={isFetching}
+              tableLayout='fixed'
+              scroll={{ y: bodyHeight }}
+              rowSelection={
+                isAdmin
+                  ? {
+                      selectedRowKeys: selectedIds,
+                      onChange: (keys) => setSelectedIds(keys as string[]),
+                      columnWidth: 44,
+                    }
+                  : undefined
+              }
+              pagination={false}
+              locale={{
+                emptyText: search ? (
+                  `No sessions match “${search}”.`
+                ) : scope === "errors" ? (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No sessions with errors.'></Empty>
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description='No sessions yet.'></Empty>
+                ),
+              }}
+              onRow={(record) => ({
+                onClick: (e) => {
+                  // Ticking the checkbox or copying the ID should not open the session
+                  const target = e.target as HTMLElement;
+                  if (target.closest(".ant-table-selection-column, .ant-typography-copy")) return;
+                  navigate(`/sessions/${record.id}`);
+                },
+              })}
+            />
+          </div>
+
+          <div className={styles.pager}>
+            <Pagination
+              current={page}
+              pageSize={pageSize}
+              total={data?.totalCount}
+              size='small'
+              showSizeChanger
+              showTotal={(total) => `${total} sessions`}
+              onChange={(nextPage, nextPageSize) =>
                 updateParams({
                   page: nextPageSize === pageSize ? nextPage : 1,
                   pageSize: nextPageSize,
-                }),
-            }}
-            onRow={(record) => ({
-              onClick: (e) => {
-                // Ticking the checkbox or copying the ID should not open the session
-                const target = e.target as HTMLElement;
-                if (
-                  target.closest(
-                    ".ant-table-selection-column, .ant-typography-copy",
-                  )
-                )
-                  return;
-                navigate(`/sessions/${record.id}`);
-              },
-            })}
-          />
+                })
+              }
+            />
+          </div>
         </div>
       )}
     </div>

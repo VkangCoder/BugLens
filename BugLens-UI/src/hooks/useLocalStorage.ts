@@ -14,7 +14,7 @@ export function useLocalStorage<T>(key: string, defaultValue: T) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch {
-      // Storage blocked (private mode): keep the value for this visit only
+      // skip
     }
   }, [key, value]);
 

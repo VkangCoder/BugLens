@@ -2,9 +2,9 @@ using BugLens.Api.Interfaces;
 using BugLens.Api.Models;
 using BugLens.Api.Models.DTOs;
 using BugLens.Api.Models.DTOs.Sessions;
-using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System.Text.RegularExpressions;
 
 namespace BugLens.Api.Services;
 

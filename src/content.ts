@@ -1,6 +1,3 @@
-// Runs in the extension's isolated world: sees the DOM, not the page's JS.
-// Captures clicks and inputs here, and forwards navigation / network / console /
-// error events coming from main-world.ts. Nothing is sent unless recording.
 (() => {
   const MAX_TEXT = 100;
   const MAX_VALUE = 200;
@@ -9,7 +6,6 @@
 
   chrome.storage.local.get("isRecording", (raw) => {
     isRecording = Boolean((raw as StorageShape).isRecording);
-    // Page (re)loaded while recording: mark it on the timeline
     if (isRecording) {
       send({
         type: "navigation",
@@ -27,7 +23,6 @@
   });
 
   function send(event: BugEvent): void {
-    // After the extension is reloaded, this old script loses access to chrome.runtime
     if (!chrome.runtime?.id) {
       stop();
       return;
@@ -37,12 +32,10 @@
     try {
       chrome.runtime.sendMessage({ type: "EVENT", event } satisfies RuntimeMessage);
     } catch {
-      // "Extension context invalidated" - the page needs a reload
       stop();
     }
   }
 
-  // Short, readable CSS selector: #id, [data-testid], or tag.class1.class2
   function selectorOf(el: Element): string {
     const tag = el.tagName.toLowerCase();
     if (el.id) return `${tag}#${CSS.escape(el.id)}`;
@@ -50,7 +43,10 @@
     const testId = el.getAttribute("data-testid");
     if (testId) return `${tag}[data-testid="${testId}"]`;
 
-    const classes = Array.from(el.classList).slice(0, 2).map((c) => `.${CSS.escape(c)}`).join("");
+    const classes = Array.from(el.classList)
+      .slice(0, 2)
+      .map((c) => `.${CSS.escape(c)}`)
+      .join("");
     return tag + classes;
   }
 
@@ -59,14 +55,12 @@
     return text.trim().replace(/\s+/g, " ").slice(0, MAX_TEXT);
   }
 
-  // ── Click ──
+  //  Click
   function handleClick(event: MouseEvent): void {
     if (!(event.target instanceof Element)) return;
 
-    // Prefer the interactive element the user meant (button, link...) over an inner <span>/<svg>
     const el =
-      event.target.closest("button, a, input, select, textarea, label, [role='button'], [onclick]") ??
-      event.target;
+      event.target.closest("button, a, input, select, textarea, label, [role='button'], [onclick]") ?? event.target;
 
     send({
       type: "click",
@@ -82,12 +76,10 @@
     });
   }
 
-  // ── Input (fires once when the value is committed, not on every keystroke) ──
+  //  Input (fires once when the value is committed, not on every keystroke)
   function handleChange(event: Event): void {
     const el = event.target;
-    if (
-      !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)
-    ) {
+    if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) {
       return;
     }
 
@@ -97,7 +89,9 @@
     if (el instanceof HTMLInputElement && (el.type === "checkbox" || el.type === "radio")) {
       value = String(el.checked);
     } else if (el instanceof HTMLSelectElement) {
-      value = Array.from(el.selectedOptions).map((o) => o.text).join(", ");
+      value = Array.from(el.selectedOptions)
+        .map((o) => o.text)
+        .join(", ");
     } else {
       value = el.value;
     }
@@ -119,7 +113,7 @@
     });
   }
 
-  // ── Events from main-world.ts ──
+  // Events from main-world.ts
   function handleBridge(event: MessageEvent): void {
     if (event.source !== window) return;
     const message = event.data as BridgeMessage | undefined;

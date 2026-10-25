@@ -2,10 +2,7 @@
   const MAX_TEXT = 500;
 
   function post(event: BridgeMessage["event"]): void {
-    window.postMessage(
-      { source: "buglens-main-world", event } satisfies BridgeMessage,
-      "*",
-    );
+    window.postMessage({ source: "buglens-main-world", event } satisfies BridgeMessage, "*");
   }
 
   function now(): string {
@@ -34,7 +31,7 @@
     }
   }
 
-  // ── Navigation: SPA route changes, back/forward, hash ──
+  //  Navigation: SPA route changes, back/forward, hash
   let lastUrl = location.href;
 
   function navigated(kind: BugNavigationEvent["data"]["kind"]): void {
@@ -56,9 +53,7 @@
   };
 
   const replaceState = history.replaceState;
-  history.replaceState = function (
-    ...args: Parameters<History["replaceState"]>
-  ) {
+  history.replaceState = function (...args: Parameters<History["replaceState"]>) {
     replaceState.apply(this, args);
     navigated("replace");
   };
@@ -66,12 +61,10 @@
   window.addEventListener("popstate", () => navigated("pop"));
   window.addEventListener("hashchange", () => navigated("hash"));
 
-  // ── Network: fetch ──
+  //  Network: fetch
   const originalFetch = window.fetch;
   window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
-    const method = (
-      init?.method ?? (input instanceof Request ? input.method : "GET")
-    ).toUpperCase();
+    const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
     const url = absoluteUrl(input instanceof Request ? input.url : input);
     const started = performance.now();
 
@@ -108,11 +101,8 @@
     }
   };
 
-  // ── Network: XMLHttpRequest ──
-  const xhrInfo = new WeakMap<
-    XMLHttpRequest,
-    { method: string; url: string; started: number }
-  >();
+  // Network: XMLHttpRequest
+  const xhrInfo = new WeakMap<XMLHttpRequest, { method: string; url: string; started: number }>();
 
   const originalOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function (
@@ -126,19 +116,11 @@
       url: absoluteUrl(url),
       started: 0,
     });
-    return (originalOpen as (...args: unknown[]) => void).call(
-      this,
-      method,
-      url,
-      ...rest,
-    );
+    return (originalOpen as (...args: unknown[]) => void).call(this, method, url, ...rest);
   } as XMLHttpRequest["open"];
 
   const originalSend = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.send = function (
-    this: XMLHttpRequest,
-    body?: Parameters<XMLHttpRequest["send"]>[0],
-  ) {
+  XMLHttpRequest.prototype.send = function (this: XMLHttpRequest, body?: Parameters<XMLHttpRequest["send"]>[0]) {
     const info = xhrInfo.get(this);
     if (info) {
       info.started = performance.now();
@@ -176,7 +158,7 @@
     };
   }
 
-  // ── Errors: uncaught JS errors and failed resources (img, script, link) ──
+  //  Errors: uncaught JS errors and failed resources (img, script, link)
   window.addEventListener(
     "error",
     (event: Event) => {
@@ -188,14 +170,9 @@
           data: {
             kind: "error",
             message: truncate(
-              event.error instanceof Error
-                ? `${event.error.name}: ${event.error.message}`
-                : event.message,
+              event.error instanceof Error ? `${event.error.name}: ${event.error.message}` : event.message,
             ),
-            stack:
-              event.error instanceof Error
-                ? truncate(event.error.stack ?? "")
-                : undefined,
+            stack: event.error instanceof Error ? truncate(event.error.stack ?? "") : undefined,
             source: event.filename,
             line: event.lineno,
             column: event.colno,
@@ -205,14 +182,8 @@
       }
 
       const target = event.target;
-      if (
-        target instanceof HTMLElement &&
-        target !== document.documentElement
-      ) {
-        const source =
-          (target as HTMLImageElement).src ||
-          (target as HTMLLinkElement).href ||
-          "";
+      if (target instanceof HTMLElement && target !== document.documentElement) {
+        const source = (target as HTMLImageElement).src || (target as HTMLLinkElement).href || "";
         post({
           type: "error",
           timestamp: now(),
@@ -225,10 +196,10 @@
         });
       }
     },
-    true, // capture phase: resource errors do not bubble
+    true,
   );
 
-  // ── Errors: promise rejected without .catch() ──
+  //  Errors: promise rejected without .catch()
   window.addEventListener("unhandledrejection", (event) => {
     const reason: unknown = event.reason;
     post({
@@ -238,8 +209,7 @@
       data: {
         kind: "unhandledrejection",
         message: truncate(stringify(reason)),
-        stack:
-          reason instanceof Error ? truncate(reason.stack ?? "") : undefined,
+        stack: reason instanceof Error ? truncate(reason.stack ?? "") : undefined,
       },
     });
   });

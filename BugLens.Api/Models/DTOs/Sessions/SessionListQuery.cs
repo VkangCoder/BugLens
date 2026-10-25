@@ -8,5 +8,5 @@ public class SessionListQuery
     public string? ProjectId { get; set; }
     public bool? HasErrors { get; set; }
     public string? Search { get; set; }
-    public string? Sort { get; set; } // "newest" (default) or "oldest"
+    public string? Sort { get; set; }
 }

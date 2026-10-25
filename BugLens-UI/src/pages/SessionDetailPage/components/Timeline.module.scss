@@ -38,7 +38,6 @@ $ruler-h: 20px;
   font: 400 10px/1 var(--ant-font-family-code);
 }
 
-// Dashed hairlines only between timeline lanes
 .lane {
   position: relative;
   height: $lane-h;
@@ -49,7 +48,6 @@ $ruler-h: 20px;
   }
 }
 
-// Ticks for most events, a dot for errors
 .marker {
   position: absolute;
   top: 50%;

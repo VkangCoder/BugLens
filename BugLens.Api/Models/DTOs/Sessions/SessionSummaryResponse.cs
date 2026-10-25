@@ -1,6 +1,5 @@
 namespace BugLens.Api.Models.DTOs.Sessions;
 
-// One row of the session list. Full events are only returned by GET /sessions/{id}.
 public class SessionSummaryResponse
 {
     public string Id { get; set; } = default!;

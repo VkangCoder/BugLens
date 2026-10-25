@@ -1,34 +1,29 @@
-import type { ReactNode } from "react";
-import { App, Button, Tooltip } from "antd";
-import { Link2, ShieldCheck } from "lucide-react";
 import CodeBlock from "@/components/CodeBlock";
 import EventTag from "@/components/EventTag";
 import MaskedValue from "@/components/MaskedValue";
 import type { BugEvent } from "@/types/session";
-import { formatDateTime } from "@/utils/format";
 import { formatOffset, isMasked } from "@/utils/events";
+import { formatDateTime } from "@/utils/format";
+import { App, Button, Tooltip, Typography } from "antd";
+import { ChevronDown, ChevronUp, Link2, ShieldCheck } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import styles from "./Inspector.module.scss";
 
-// Key/value rows shown for each event type
+const ICON = { size: 14 };
+
 function fieldsOf(event: BugEvent): [string, ReactNode][] {
   switch (event.type) {
     case "click":
       return [
         ["Selector", event.data.selector ?? event.data.tagName],
         ["Text", event.data.text || "—"],
-        [
-          "Position",
-          event.data.x !== undefined ? `${event.data.x}, ${event.data.y}` : "—",
-        ],
+        ["Position", event.data.x !== undefined ? `${event.data.x}, ${event.data.y}` : "—"],
       ];
     case "input":
       return [
         ["Selector", event.data.selector],
         ["Type", event.data.inputType],
-        [
-          "Value",
-          event.data.masked ? <MaskedValue /> : event.data.value || "—",
-        ],
+        ["Value", event.data.masked ? <MaskedValue /> : event.data.value || "—"],
       ];
     case "navigation":
       return [
@@ -41,9 +36,7 @@ function fieldsOf(event: BugEvent): [string, ReactNode][] {
         ["Request", `${event.data.method} ${event.data.url}`],
         ["Status", event.data.status || "failed"],
         ["Duration", `${event.data.duration} ms`],
-        ...(event.data.error
-          ? ([["Error", event.data.error]] as [string, ReactNode][])
-          : []),
+        ...(event.data.error ? ([["Error", event.data.error]] as [string, ReactNode][]) : []),
       ];
     case "console":
       return [
@@ -56,10 +49,7 @@ function fieldsOf(event: BugEvent): [string, ReactNode][] {
         ["Message", event.data.message],
         ...(event.data.source
           ? ([
-              [
-                "Source",
-                `${event.data.source}${event.data.line ? `:${event.data.line}:${event.data.column}` : ""}`,
-              ],
+              ["Source", `${event.data.source}${event.data.line ? `:${event.data.line}:${event.data.column}` : ""}`],
             ] as [string, ReactNode][])
           : []),
       ];
@@ -68,13 +58,13 @@ function fieldsOf(event: BugEvent): [string, ReactNode][] {
 
 interface InspectorProps {
   event: BugEvent;
-  index: number; // 0-based
+  index: number;
   offset: number;
 }
 
 export default function Inspector({ event, index, offset }: InspectorProps) {
+  const [expanded, setExpanded] = useState(false);
   const { message } = App.useApp();
-
   async function copyLink() {
     const url = new URL(window.location.href);
     url.searchParams.set("event", String(index + 1));
@@ -90,13 +80,13 @@ export default function Inspector({ event, index, offset }: InspectorProps) {
         <EventTag type={event.type} />
         <span className={styles.number}>#{index + 1}</span>
         <span className={styles.spacer} />
-        <Tooltip placement="left" title="Copy link to event">
+        <Tooltip placement='left' title='Copy link to event'>
           <Button
-            type="text"
-            size="small"
+            type='text'
+            size='small'
             icon={<Link2 size={14} strokeWidth={1.5} />}
             onClick={copyLink}
-            aria-label="Copy link to event"
+            aria-label='Copy link to event'
           />
         </Tooltip>
       </header>
@@ -108,21 +98,39 @@ export default function Inspector({ event, index, offset }: InspectorProps) {
           <dt>Time</dt>
           <dd>{formatDateTime(event.timestamp)}</dd>
           <dt>Page</dt>
-          <dd className={styles.mono}>{event.url}</dd>
+          <dd className={styles.mono}>
+            <Typography.Paragraph
+              ellipsis={{
+                rows: 1,
+                expandable: "collapsible",
+                expanded,
+                symbol: (
+                  <Tooltip
+                    key={String(expanded)}
+                    title={expanded ? "Collapse" : "Expand"}
+                    trigger='hover'
+                    mouseLeaveDelay={0}
+                  >
+                    {expanded ? <ChevronUp {...ICON} /> : <ChevronDown {...ICON} />}
+                  </Tooltip>
+                ),
+                onExpand: (_, info) => {
+                  setExpanded(info.expanded);
+                },
+              }}
+            >
+              {event.url}
+            </Typography.Paragraph>
+          </dd>
           {fieldsOf(event).map(([label, value]) => (
-            <FieldRow
-              key={label}
-              label={label}
-              value={value}
-              danger={isError && label === "Message"}
-            />
+            <FieldRow key={label} label={label} value={value} danger={isError && label === "Message"} />
           ))}
         </dl>
 
         {event.type === "error" && event.data.stack ? (
-          <CodeBlock title="stack trace" code={event.data.stack} />
+          <CodeBlock title='stack trace' code={event.data.stack} />
         ) : (
-          <CodeBlock title="payload" data={event.data} />
+          <CodeBlock title='payload' data={event.data} />
         )}
 
         {isMasked(event) && (
@@ -136,20 +144,34 @@ export default function Inspector({ event, index, offset }: InspectorProps) {
   );
 }
 
-function FieldRow({
-  label,
-  value,
-  danger,
-}: {
-  label: string;
-  value: ReactNode;
-  danger?: boolean;
-}) {
+function FieldRow({ label, value, danger }: { label: string; value: ReactNode; danger?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
   return (
     <>
       <dt>{label}</dt>
       <dd className={`${styles.mono} ${danger ? styles.danger : ""}`}>
-        {value}
+        <Typography.Paragraph
+          ellipsis={{
+            rows: 1,
+            expandable: "collapsible",
+            expanded,
+            symbol: (
+              <Tooltip
+                key={String(expanded)}
+                title={expanded ? "Collapse" : "Expand"}
+                trigger='hover'
+                mouseLeaveDelay={0}
+              >
+                {expanded ? <ChevronUp {...ICON} /> : <ChevronDown {...ICON} />}
+              </Tooltip>
+            ),
+            onExpand: (_, info) => {
+              setExpanded(info.expanded);
+            },
+          }}
+        >
+          {value}
+        </Typography.Paragraph>
       </dd>
     </>
   );

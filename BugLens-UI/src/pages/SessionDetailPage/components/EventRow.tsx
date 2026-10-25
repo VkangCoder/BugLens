@@ -6,7 +6,7 @@ import { describeEvent, formatOffset, isMasked } from "@/utils/events";
 import styles from "./EventRow.module.scss";
 
 interface EventRowProps {
-  index: number; // 1-based, shown in the first column
+  index: number;
   event: BugEvent;
   offset: number;
   selected: boolean;
@@ -18,7 +18,6 @@ export default function EventRow({ index, event, offset, selected, onClick }: Ev
   const isError = event.type === "error";
   const ref = useRef<HTMLButtonElement>(null);
 
-  // Keep the selected row visible while playing or stepping
   useEffect(() => {
     if (selected) ref.current?.scrollIntoView({ block: "nearest" });
   }, [selected]);
@@ -26,7 +25,7 @@ export default function EventRow({ index, event, offset, selected, onClick }: Ev
   return (
     <button
       ref={ref}
-      type="button"
+      type='button'
       className={`${styles.row} ${isError ? styles.error : ""} ${selected ? styles.selected : ""}`}
       onClick={onClick}
       aria-current={selected || undefined}
@@ -36,7 +35,11 @@ export default function EventRow({ index, event, offset, selected, onClick }: Ev
       <EventTag type={event.type} />
       <span className={styles.body}>
         <span className={styles.target}>{target}</span>
-        {isMasked(event) ? <MaskedValue showReason={false} /> : detail && <span className={styles.detail}>{detail}</span>}
+        {isMasked(event) ? (
+          <MaskedValue showReason={false} />
+        ) : (
+          detail && <span className={styles.detail}>{detail}</span>
+        )}
       </span>
     </button>
   );
