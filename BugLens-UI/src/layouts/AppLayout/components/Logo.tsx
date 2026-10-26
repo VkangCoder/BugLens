@@ -1,7 +1,7 @@
 const MARK_PATH = "M12 92C2 46 50 12 63 42C74 68 32 88 28 60C25 38 58 34 63 54C65 60 70 60 76 60L98 60";
 
 export default function Logo({ size = 20, wordmark = true }: { size?: number; wordmark?: boolean }) {
-  const small = size < 24;
+  const small = size < 24; // heavier stroke so the mark stays legible when small
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: Math.round(size * 0.4) }}>
       <svg width={size} height={size} viewBox='0 0 120 120' fill='none' aria-hidden='true'>

@@ -1,7 +1,7 @@
 using BugLens.Api.Auth;
 using BugLens.Api.Data;
+using BugLens.Api.Infrastructure;
 using BugLens.Api.Interfaces;
-using BugLens.Api.OpenApi;
 using BugLens.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -32,7 +32,7 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
 
 builder.Services.AddScoped<IBugSessionService, BugSessionService>();
 
-// Configure JwtSettings for authentication, ensuring that essential values ​​are provided and valid.
+// Configure JwtSettings for authentication, ensuring that essential values are provided and valid.
 builder.Services
     .AddOptions<JwtSettings>()
     .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
@@ -44,13 +44,10 @@ builder.Services
         "JwtSettings:Issuer and Audience are required.")
     .ValidateOnStart();
 
-// Two ways in: JWT for people (dashboard), X-Api-Key for the extension (ingest only)
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer()
     .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(ApiKeyDefaults.Scheme, null);
-
-// Deny by default: an endpoint without [Authorize] / [AllowAnonymous] still needs a signed-in user
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 
@@ -91,11 +88,9 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-// Bearer + ApiKey security schemes, so Scalar can send the token / key on every request
 builder.Services.AddOpenApi(options =>
 {
-    options.AddDocumentTransformer<SecuritySchemeTransformer>();
-    options.AddOperationTransformer<SecuritySchemeTransformer>();
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
 });
 
 var app = builder.Build();
@@ -104,32 +99,27 @@ using (var scope = app.Services.CreateScope())
 {
     var sp = scope.ServiceProvider;
 
-    try
-    {
-        await sp.GetRequiredService<IBugSessionService>().EnsureIndexesAsync(CancellationToken.None);
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogWarning(ex, "Could not create session indexes. The API still runs, but list queries may be slower.");
-    }
+    await sp.GetRequiredService<IBugSessionService>().EnsureIndexesAsync(CancellationToken.None);
+    await sp.GetRequiredService<IProjectService>().EnsureIndexesAsync();
 
     var auth = sp.GetRequiredService<IAuthService>();
     await auth.EnsureIndexesAsync();
     await auth.SeedAdminAsync();
-
-    // Unique index on the key hash: fail fast if it cannot be created
-    await sp.GetRequiredService<IProjectService>().EnsureIndexesAsync();
 }
 
 if (app.Environment.IsDevelopment())
 {
-    // The fallback policy would also lock the API docs
     app.MapOpenApi().AllowAnonymous();
-    // Paste the JWT once in Scalar (Auth → Bearer); it is kept across requests and page reloads
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint(
+            "/openapi/v1.json",
+            "BugLens API v1");
+    });
     app.MapScalarApiReference(options => options
-            .AddPreferredSecuritySchemes(SecuritySchemeTransformer.BearerScheme)
-            .EnablePersistentAuthentication())
-        .AllowAnonymous();
+       .AddPreferredSecuritySchemes("Bearer")
+       .EnablePersistentAuthentication()).AllowAnonymous();
+
 }
 
 // CORS first, so every response (redirects and errors too) carries the CORS headers

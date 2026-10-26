@@ -11,6 +11,10 @@ export async function createProject(name: string): Promise<ProjectWithKeyRespons
   return response.data;
 }
 
+export async function deleteProject(id: string): Promise<void> {
+  await apiClient.delete(`/projects/${encodeURIComponent(id)}`);
+}
+
 export async function rotateProjectKey(id: string): Promise<ProjectWithKeyResponse> {
   const response = await apiClient.post<ProjectWithKeyResponse>(`/projects/${encodeURIComponent(id)}/rotate-key`);
   return response.data;

@@ -1,4 +1,4 @@
-﻿using BugLens.Api.Interfaces;
+using BugLens.Api.Interfaces;
 using BugLens.Api.Models;
 using BugLens.Api.Models.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +11,6 @@ namespace BugLens.Api.Controllers
     [ApiController]
     public class AuthController(IAuthService authService) : ControllerBase
     {
-
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken ct)
@@ -22,7 +21,6 @@ namespace BugLens.Api.Controllers
                 ? Unauthorized(new ProblemDetails { Title = "Invalid credentials", Status = StatusCodes.Status401Unauthorized })
                 : Ok(result);
         }
-
 
         // POST api/<AuthController>
         [HttpPost("users")]
@@ -42,6 +40,27 @@ namespace BugLens.Api.Controllers
             {
                 return BadRequest(new ProblemDetails { Title = "Invalid role", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
+        }
+
+        [HttpGet("users")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<ActionResult<IReadOnlyList<UserResponse>>> ListUsers(CancellationToken ct) => Ok(await authService.ListUsersAsync(ct));
+
+
+        // The deleted user's token keeps working until it expires (JWT is stateless)
+        [HttpDelete("users/{id}")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<IActionResult> DeleteUser(string id, CancellationToken ct)
+        {
+            var result = await authService.DeleteUserAsync(id, User.FindFirst("sub")?.Value, ct);
+
+            return result switch
+            {
+                DeleteUserResult.Deleted => NoContent(),
+                DeleteUserResult.Self => Conflict(new ProblemDetails { Title = "Can't delete yourself", Detail = "Ask another admin to remove your account.", Status = StatusCodes.Status409Conflict }),
+                DeleteUserResult.LastAdmin => Conflict(new ProblemDetails { Title = "Last admin", Detail = "Create another admin before deleting this one.", Status = StatusCodes.Status409Conflict }),
+                _ => NotFound(),
+            };
         }
 
         [HttpGet("me")]

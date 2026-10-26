@@ -62,10 +62,10 @@ export default function CreateUserModal({ open, onClose, onCreated }: CreateUser
         <Form.Item
           name='name'
           label='Name'
-          extra="3–50 characters: letters, digits, '.', '_' or '-'. Used to sign in."
+          extra="3 - 50 characters: letters, digits, '.', '_' or '-'. Used to sign in."
           rules={[
             { required: true, message: "Enter a name" },
-            { pattern: /^[\p{L}\p{N}._-]{3,50}$/u, message: "3–50 characters: letters, digits, '.', '_' or '-'" },
+            { pattern: /^[\p{L}\p{N}._-]{3,50}$/u, message: "3 - 50 characters: letters, digits, '.', '_' or '-'" },
           ]}
         >
           <Input autoFocus autoComplete='off' autoCapitalize='none' spellCheck={false} />
@@ -77,7 +77,7 @@ export default function CreateUserModal({ open, onClose, onCreated }: CreateUser
           extra="Share it with the user directly. They can't change it yet."
           rules={[
             { required: true, message: "Enter a password" },
-            { min: 6, max: 128, message: "Use 6–128 characters" },
+            { min: 6, max: 128, message: "Use 6 - 128 characters" },
           ]}
         >
           <Input.Password autoComplete='new-password' />

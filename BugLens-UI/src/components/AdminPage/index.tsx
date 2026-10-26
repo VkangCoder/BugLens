@@ -8,7 +8,7 @@ interface AdminPageProps {
   children: ReactNode;
 }
 
-/** Khung chung cho các trang quản trị: tiêu đề + nút hành động + nội dung. */
+/** Shared frame for admin pages: title + action buttons + content. */
 export default function AdminPage({ title, subtitle, actions, children }: AdminPageProps) {
   return (
     <div className={styles.page}>

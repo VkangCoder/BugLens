@@ -48,6 +48,7 @@ export default function SessionDetailPage() {
     );
   if (isError || !data) return <Alert className={styles.alert} type='error' title='Failed to load session.' showIcon />;
 
+  // key: reset selection and playback when another session is opened
   return <SessionDetail key={data.id} session={data} />;
 }
 
@@ -55,7 +56,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { modal, message } = App.useApp();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useAuth(); // only to hide UI; the server still checks delete permission
   const [searchParams] = useSearchParams();
 
   const start = new Date(session.startedAt).getTime();
@@ -113,7 +114,7 @@ function SessionDetail({ session }: { session: SessionResponse }) {
     return () => clearInterval(timer);
   }, [playing, duration]);
 
-  // Filters
+  // ── Filters ──
   const [tab, setTab] = useState<TabKey>("events");
   const [visibleTypes, setVisibleTypes] = useState<BugEventType[]>(EVENT_TYPES);
 
@@ -135,13 +136,13 @@ function SessionDetail({ session }: { session: SessionResponse }) {
 
   const countOf = (types: BugEventType[]) => events.filter((e) => types.includes(e.type)).length;
 
-  // Inspector panel
+  // ── Inspector panel ──
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 1100);
   // Width set by dragging the splitter; double-click the bar to reset
   const [inspectorWidth, setInspectorWidth] = useLocalStorage("buglens-inspector-width", INSPECTOR_DEFAULT_WIDTH);
   const showInspector = inspectorOpen && selected !== null && !!events[selected];
 
-  // Delete
+  // ── Delete ──
   const deleteMutation = useMutation({
     mutationFn: () => deleteSession(session.id),
     onSuccess: () => {
@@ -226,7 +227,9 @@ function SessionDetail({ session }: { session: SessionResponse }) {
             </h1>
             <div className={styles.meta}>
               <StatusBadge errorCount={errorCount} />
-              <Tag className={styles.project}>{session.projectId}</Tag>
+              <Tooltip title={`Project ID ${session.projectId}`}>
+                <Tag className={styles.project}>{session.projectName ?? "Deleted project"}</Tag>
+              </Tooltip>
               <span className={styles.metaText}>
                 {session.browser.name} {session.browser.version} · {session.viewport.width} × {session.viewport.height}{" "}
                 · {formatDuration(session.startedAt, session.endedAt)} · {formatDateTime(session.startedAt)}
@@ -304,7 +307,8 @@ function SessionDetail({ session }: { session: SessionResponse }) {
             <dl className={styles.env}>
               {[
                 ["Session ID", session.id],
-                ["Project", session.projectId],
+                ["Project", session.projectName ?? "Deleted project"],
+                ["Project ID", session.projectId],
                 ["Initial URL", session.initialUrl],
                 ["Browser", `${session.browser.name} ${session.browser.version}`],
                 ["Viewport", `${session.viewport.width} × ${session.viewport.height}`],

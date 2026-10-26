@@ -7,6 +7,6 @@ public class LoginRequest
     [Required, StringLength(50)]
     public string Name { get; set; } = default!;
 
-    [Required, StringLength(192)]
+    [Required, StringLength(128)]
     public string Password { get; set; } = default!;
 }

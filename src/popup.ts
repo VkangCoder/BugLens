@@ -107,9 +107,7 @@ function renderFeed(events: BugEvent[], startedAt?: string): void {
 
         const time = document.createElement("span");
         time.className = "feed-time";
-        time.textContent = formatOffset(
-          new Date(event.timestamp).getTime() - start,
-        ).slice(0, 7);
+        time.textContent = formatOffset(new Date(event.timestamp).getTime() - start).slice(0, 7);
 
         const { label, icon } = EVENT_TAGS[event.type];
         const tag = document.createElement("span");
@@ -132,9 +130,7 @@ function renderFeed(events: BugEvent[], startedAt?: string): void {
 function renderElapsed(): void {
   const startedAt = state.session?.startedAt;
   if (!startedAt) return;
-  $("elapsed").textContent = formatOffset(
-    Date.now() - new Date(startedAt).getTime(),
-  ).slice(0, 5);
+  $("elapsed").textContent = formatOffset(Date.now() - new Date(startedAt).getTime()).slice(0, 5);
 }
 
 function render(): void {
@@ -152,6 +148,22 @@ function render(): void {
     timerId = setInterval(renderElapsed, 250);
   }
 
+  // Start recording only with a key the API has accepted (empty, wrong or still being checked → disabled)
+  const keyReady = Boolean(state.ingestKey?.trim()) && state.ingestKeyValidated === true;
+  const startButton = $("start") as HTMLButtonElement;
+  startButton.disabled = !keyReady;
+  startButton.title = keyReady ? "" : "Enter a valid Ingest Key to start recording";
+
+  const retryButton = $("retry") as HTMLButtonElement;
+  retryButton.disabled = !keyReady;
+  retryButton.title = keyReady ? "" : "Enter a valid Ingest Key to retry the upload";
+
+  const projectName = keyReady ? state.ingestProject?.name : undefined;
+  const projectChip = $("project-chip");
+  projectChip.hidden = !projectName;
+  projectChip.textContent = projectName ?? "";
+  projectChip.title = projectName ? `Sessions are saved to project ${projectName}` : "";
+
   $("count").textContent = String(events.length);
   renderFeed(events, state.session?.startedAt);
 
@@ -159,12 +171,12 @@ function render(): void {
   $("failed-message").textContent = state.uploadError ?? "";
 
   const last = state.lastSession;
-  $("last-session").textContent = last
-    ? `Last session · ${formatRelative(last.savedAt)}`
-    : "No sessions yet";
+  $("last-session").textContent = last ? `Last session · ${formatRelative(last.savedAt)}` : "No sessions yet";
   if (last) {
     $("saved-id").textContent = last.id;
-    $("saved-count").textContent = pluralEvents(last.eventCount);
+    $("saved-count").textContent = last.projectName
+      ? `${pluralEvents(last.eventCount)} · ${last.projectName}`
+      : pluralEvents(last.eventCount);
   }
 }
 
@@ -186,7 +198,21 @@ function send(message: RuntimeMessage): void {
 }
 
 // ── Actions ──
-$("start").addEventListener("click", () => {
+$("start").addEventListener("click", async () => {
+  const { ingestKey, ingestKeyValidated } = (await chrome.storage.local.get([
+    "ingestKey",
+    "ingestKeyValidated",
+  ])) as StorageShape;
+
+  if (!ingestKey?.trim() || ingestKeyValidated !== true) {
+    const status = $("key-status");
+    status.textContent = "The Ingest Key has not been authenticated by the API. Please enter a valid key..";
+    status.dataset.state = "error";
+
+    ($("ingest-key") as HTMLInputElement).focus();
+    return;
+  }
+
   markSessionSeen();
   send({ type: "START_RECORDING" });
 });
@@ -212,8 +238,7 @@ $("open-dashboard").addEventListener("click", (e) => {
 
 $("open-session").addEventListener("click", () => {
   markSessionSeen();
-  if (state.lastSession)
-    void openDashboard(`/sessions/${state.lastSession.id}`);
+  if (state.lastSession) void openDashboard(`/sessions/${state.lastSession.id}`);
 });
 
 $("copy-id").addEventListener("click", async () => {
@@ -241,6 +266,9 @@ chrome.storage.local.get(
     "events",
     "session",
     "lastSession",
+    "ingestKey",
+    "ingestKeyValidated",
+    "ingestProject",
   ],
   (raw) => {
     state = raw as StorageShape;
@@ -257,3 +285,180 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   state = next as StorageShape;
   render();
 });
+
+const domainsInput = $("domains") as HTMLInputElement;
+
+chrome.storage.local.get("allowedDomains", (raw) => {
+  domainsInput.value = ((raw as StorageShape).allowedDomains ?? []).join(", ");
+});
+
+domainsInput.addEventListener("change", () => {
+  const list = domainsInput.value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  chrome.storage.local.set({ allowedDomains: list } satisfies StorageShape);
+});
+
+// The API rejected the key (401/403). Only this clears the saved key; network errors and 5xx keep it.
+class InvalidKeyError extends Error {}
+
+const KEY_STORAGE = ["ingestKey", "ingestKeyValidated", "ingestProject"] as const;
+
+async function validateIngestKey(key: string): Promise<IngestProject> {
+  const env = await loadEnv();
+
+  const response = await fetch(`${env.API_BASE_URL}/api/v1/ingest/validate-key`, {
+    method: "POST",
+    headers: {
+      "X-Api-Key": key,
+    },
+    cache: "no-store",
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    throw new InvalidKeyError("Ingest Key is invalid or revoked.");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Could not verify the key (HTTP ${response.status}).`);
+  }
+
+  const result = (await response.json()) as { valid?: boolean; projectId?: string; projectName?: string };
+
+  if (result.valid !== true) {
+    throw new InvalidKeyError("The API did not accept this Ingest Key.");
+  }
+
+  return { id: result.projectId ?? "", name: result.projectName ?? "Unknown project" };
+}
+
+function setupIngestKey(inputId: string, saveId: string, toggleId: string, statusId: string): void {
+  const input = $(inputId) as HTMLInputElement;
+  const saveButton = $(saveId) as HTMLButtonElement;
+  const toggleButton = $(toggleId) as HTMLButtonElement;
+  const status = $(statusId);
+
+  let validationTimer: ReturnType<typeof setTimeout> | undefined;
+  // Per input, so the idle and failed views don't cancel each other's check
+  let validationVersion = 0;
+
+  function setStatus(message: string, stateName: "success" | "error" | "" = ""): void {
+    status.textContent = message;
+
+    if (stateName) {
+      status.dataset.state = stateName;
+    } else {
+      delete status.dataset.state;
+    }
+  }
+
+  async function checkAndSaveKey(key: string): Promise<void> {
+    const version = ++validationVersion;
+
+    if (!key) {
+      await chrome.storage.local.remove([...KEY_STORAGE]);
+      if (version !== validationVersion) {
+        return;
+      }
+      setStatus("Enter the Ingest Key.", "error");
+      return;
+    }
+
+    setStatus("Checking key with API...");
+
+    try {
+      const project = await validateIngestKey(key);
+
+      if (version !== validationVersion || input.value.trim() !== key) {
+        return;
+      }
+
+      await chrome.storage.local.set({
+        ingestKey: key,
+        ingestKeyValidated: true,
+        ingestProject: project,
+      } satisfies StorageShape);
+
+      setStatus(`Valid key · project ${project.name}.`, "success");
+    } catch (error: unknown) {
+      if (version !== validationVersion || input.value.trim() !== key) {
+        return;
+      }
+
+      if (error instanceof InvalidKeyError) {
+        await chrome.storage.local.remove([...KEY_STORAGE]);
+        setStatus(error.message, "error");
+        return;
+      }
+
+      // API offline, restarting or 5xx: keep the key instead of wiping it
+      const reason =
+        error instanceof Error && !(error instanceof TypeError) ? error.message : "Could not reach the API.";
+      const saved = (await chrome.storage.local.get(["ingestKey", "ingestKeyValidated"])) as StorageShape;
+
+      if (saved.ingestKey === key && saved.ingestKeyValidated === true) {
+        setStatus(`${reason} Using the saved key.`, "error");
+        return;
+      }
+
+      // A new key: keep it, but don't allow recording until the API accepts it
+      await chrome.storage.local.set({ ingestKey: key, ingestKeyValidated: false } satisfies StorageShape);
+      await chrome.storage.local.remove("ingestProject");
+      setStatus(`${reason} Key saved; press Save to check again.`, "error");
+    }
+  }
+
+  input.addEventListener("input", () => {
+    validationVersion++;
+
+    if (validationTimer) {
+      clearTimeout(validationTimer);
+    }
+
+    void chrome.storage.local.remove([...KEY_STORAGE]);
+
+    const key = input.value.trim();
+
+    if (!key) {
+      setStatus("Please enter the Ingest Key.");
+      return;
+    }
+
+    setStatus("Awaiting key verification...");
+
+    validationTimer = setTimeout(() => {
+      void checkAndSaveKey(key);
+    }, 500);
+  });
+
+  saveButton.addEventListener("click", () => {
+    if (validationTimer) {
+      clearTimeout(validationTimer);
+    }
+
+    void checkAndSaveKey(input.value.trim());
+  });
+
+  toggleButton.addEventListener("click", () => {
+    const show = input.type === "password";
+
+    input.type = show ? "text" : "password";
+    toggleButton.textContent = show ? "Hide" : "Show";
+    toggleButton.setAttribute("aria-label", show ? "Hide Ingest Key" : "Show Ingest Key");
+  });
+
+  void chrome.storage.local.get("ingestKey").then((raw) => {
+    const key = (raw as StorageShape).ingestKey ?? "";
+
+    if (key) {
+      input.value = key;
+      void checkAndSaveKey(key);
+    } else {
+      setStatus("Ingest Key not configured.");
+    }
+  });
+}
+
+setupIngestKey("ingest-key", "save-key", "toggle-key", "key-status");
+setupIngestKey("failed-ingest-key", "save-failed-key", "toggle-failed-key", "failed-key-status");

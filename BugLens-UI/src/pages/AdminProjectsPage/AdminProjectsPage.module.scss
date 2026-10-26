@@ -11,3 +11,8 @@
 .muted {
   color: var(--ant-color-text-tertiary);
 }
+
+.actions {
+  display: inline-flex;
+  gap: 6px;
+}

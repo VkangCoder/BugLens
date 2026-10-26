@@ -1,8 +1,8 @@
-using System.Security.Claims;
-using System.Text.Encodings.Web;
 using BugLens.Api.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using System.Security.Claims;
+using System.Text.Encodings.Web;
 
 namespace BugLens.Api.Auth;
 
@@ -11,6 +11,7 @@ public static class ApiKeyDefaults
     public const string Scheme = "ApiKey";
     public const string HeaderName = "X-Api-Key";
     public const string ProjectIdClaim = "project_id";
+    public const string ProjectNameClaim = "project_name";
 }
 
 public class ApiKeyAuthenticationHandler(
@@ -36,7 +37,10 @@ public class ApiKeyAuthenticationHandler(
             return AuthenticateResult.Fail("Invalid API key.");
 
         var identity = new ClaimsIdentity(
-            [new Claim(ApiKeyDefaults.ProjectIdClaim, project.Id)],
+            [
+                new Claim(ApiKeyDefaults.ProjectIdClaim, project.Id),
+                new Claim(ApiKeyDefaults.ProjectNameClaim, project.Name),
+            ],
             Scheme.Name);
 
         return AuthenticateResult.Success(

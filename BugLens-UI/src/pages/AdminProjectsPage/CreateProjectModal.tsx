@@ -23,6 +23,7 @@ export default function CreateProjectModal({ open, onClose, onCreated }: CreateP
   async function handleFinish(values: FormValues) {
     setSubmitting(true);
     try {
+      // Called directly, not via useMutation: the mutation cache would keep the result (with ingestKey) for a few more minutes.
       onCreated(await createProject(values.name.trim()));
     } catch (error: unknown) {
       const problem = parseApiProblem(error, "Couldn't create the project.");
@@ -35,25 +36,25 @@ export default function CreateProjectModal({ open, onClose, onCreated }: CreateP
   return (
     <Modal
       open={open}
-      title='New project'
-      okText='Create project'
+      title="New project"
+      okText="Create project"
       okButtonProps={{ htmlType: "submit", form: FORM_ID }}
       confirmLoading={submitting}
       onCancel={onClose}
       afterClose={() => form.resetFields()}
       destroyOnHidden
     >
-      <Form<FormValues> id={FORM_ID} form={form} layout='vertical' requiredMark={false} onFinish={handleFinish}>
+      <Form<FormValues> id={FORM_ID} form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
         <Form.Item
-          name='name'
-          label='Name'
-          extra='One project per app or environment you want to record.'
+          name="name"
+          label="Name"
+          extra="One project per app or environment you want to record."
           rules={[
             { required: true, whitespace: true, message: "Enter a project name" },
             { min: 2, max: 100, message: "Use 2–100 characters" },
           ]}
         >
-          <Input autoFocus autoComplete='off' />
+          <Input autoFocus autoComplete="off" />
         </Form.Item>
       </Form>
     </Modal>

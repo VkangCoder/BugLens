@@ -88,18 +88,49 @@
       <div class="site-row">
         <svg class="icon icon-sm"><use href="#i-globe" /></svg>
         <span class="site-url" id="site-url">—</span>
+        <!-- Project the validated ingest key files sessions under -->
+        <span class="project-chip" id="project-chip" hidden></span>
       </div>
 
       <!-- Idle -->
       <section class="view" id="view-idle" hidden>
         <div>
           <h2 class="title">Ready to record</h2>
-          <p class="caption">Clicks, inputs, navigation, network requests and errors on this tab are captured in order. Password fields are masked.</p>
+          <p class="caption">
+            Clicks, inputs, navigation, network requests and errors on this tab are captured in order. Password fields
+            are masked.
+          </p>
+        </div>
+        <div class="input">
+          <input id="domains" placeholder="myapp.com, staging.myapp.com" />
+        </div>
+        <!-- Ingest Key configuration -->
+        <div class="key-settings">
+          <label for="ingest-key">Ingest Key</label>
+
+          <div class="key-input-row">
+            <input
+              id="ingest-key"
+              type="password"
+              placeholder="Paste the Ingest Key here"
+              autocomplete="off"
+              spellcheck="false"
+            />
+
+            <button type="button" class="btn btn-ghost" id="toggle-key" aria-label="Show or hide Ingest Key">
+              Show
+            </button>
+          </div>
+
+          <button type="button" class="btn btn-ghost btn-block" id="save-key">Save Ingest Key</button>
+
+          <p class="caption" id="key-status" role="status">Key status not yet loaded.</p>
         </div>
         <button type="button" class="btn btn-primary btn-lg btn-block" id="start">
           <svg class="icon"><use href="#i-circle" /></svg>
           Start recording
         </button>
+
         <div class="meta-row">
           <span id="last-session"></span>
           <a href="http://localhost:3000" id="open-dashboard">Open dashboard</a>
@@ -143,6 +174,28 @@
             <h2 class="title">Upload failed. Session kept locally.</h2>
             <p class="caption mono" id="failed-message"></p>
           </div>
+        </div>
+        <!-- Lets the user fix a revoked key before retrying -->
+        <div class="key-settings">
+          <label for="failed-ingest-key">Ingest Key</label>
+
+          <div class="key-input-row">
+            <input
+              id="failed-ingest-key"
+              type="password"
+              placeholder="Paste the Ingest Key here"
+              autocomplete="off"
+              spellcheck="false"
+            />
+
+            <button type="button" class="btn btn-ghost" id="toggle-failed-key" aria-label="Show or hide Ingest Key">
+              Show
+            </button>
+          </div>
+
+          <button type="button" class="btn btn-ghost btn-block" id="save-failed-key">Save Ingest Key</button>
+
+          <p class="caption" id="failed-key-status" role="status">Key status not yet loaded.</p>
         </div>
         <button type="button" class="btn btn-primary btn-lg btn-block" id="retry">Retry upload</button>
         <button type="button" class="btn btn-ghost btn-block" id="discard">Discard session</button>

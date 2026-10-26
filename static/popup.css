@@ -38,6 +38,7 @@
   --border-1: #dedbd5;
   --border-2: #c6c2ba;
   --focus-ring: #3fa58f;
+  --accent-subtle: #eaf5f2; /* input focus halo (buglens-design --accent-subtle) */
 
   /* Accent (verdigris) */
   --accent: #218775;
@@ -264,6 +265,83 @@ a:hover {
 }
 .status .caption.mono {
   word-break: break-word;
+}
+
+/* Text inputs (domains, ingest key): one style so they look and focus the same.
+   buglens-design Input: border-2 at rest, accent border + 3px accent-subtle halo on focus. */
+.input input,
+.key-input-row input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h-md);
+  padding: 0 10px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--fg-1);
+  font: 400 12px/1.4 var(--font-mono);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.input input::placeholder,
+.key-input-row input::placeholder {
+  color: var(--fg-3);
+}
+
+.input input:focus,
+.key-input-row input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+/* Ingest Key settings */
+.key-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.key-settings label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-2);
+}
+
+.key-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* #key-status and #failed-key-status */
+.key-settings [role="status"] {
+  overflow-wrap: anywhere;
+}
+
+.key-settings [role="status"][data-state="success"] {
+  color: var(--success);
+}
+
+.key-settings [role="status"][data-state="error"] {
+  color: var(--danger);
+}
+
+/* Project of the validated ingest key, right side of the site row */
+.project-chip {
+  flex: none;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-subtle);
+  color: var(--accent-fg);
+  font: 500 11px/1.5 var(--font-sans);
 }
 
 /* ── Recording ── */

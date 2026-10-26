@@ -1,4 +1,4 @@
-﻿using BugLens.Api.Auth;
+using BugLens.Api.Auth;
 using BugLens.Api.Interfaces;
 using BugLens.Api.Mappers;
 using BugLens.Api.Models;
@@ -6,18 +6,27 @@ using BugLens.Api.Models.DTOs.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
+using System.Text.Json;
 
 namespace BugLens.Api.Controllers;
 
 [Route("api/v1/sessions")]
 [ApiController]
-public class SessionsController(IBugSessionService sessionService) : ControllerBase
+[Authorize]
+public class SessionsController(IBugSessionService sessionService, IProjectService projectService) : ControllerBase
 {
+    private const int MaxEvents = 10_000;
+
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetAll([FromQuery] SessionListQuery query, CancellationToken ct)
     {
         var response = await sessionService.GetSummariesAsync(query, ct);
+
+        var names = await projectService.GetNamesAsync(response.Items.Select(s => s.ProjectId), ct);
+        foreach (var item in response.Items)
+            item.ProjectName = names.GetValueOrDefault(item.ProjectId);
+
         return Ok(response);
     }
 
@@ -30,7 +39,11 @@ public class SessionsController(IBugSessionService sessionService) : ControllerB
         if (session is null)
             return NotFound();
 
-        return Ok(SessionMapper.ToResponse(session));
+        var response = SessionMapper.ToResponse(session);
+        var names = await projectService.GetNamesAsync([session.ProjectId], ct);
+        response.ProjectName = names.GetValueOrDefault(session.ProjectId);
+
+        return Ok(response);
     }
 
     [HttpPost]
@@ -40,9 +53,38 @@ public class SessionsController(IBugSessionService sessionService) : ControllerB
         [FromBody] CreateSessionRequest request,
         CancellationToken ct)
     {
-        // projectId comes from the authenticated API key, never from the body
         var projectId = User.FindFirst(ApiKeyDefaults.ProjectIdClaim)?.Value;
         if (projectId is null) return Unauthorized();
+
+        if (request.Events.Count is 0 or > MaxEvents)
+            return Invalid("Invalid events", $"Send between 1 and {MaxEvents} events.");
+
+        var events = new List<BugEvent>(request.Events.Count);
+
+        foreach (var e in request.Events)
+        {
+
+            if (e.Data.ValueKind != JsonValueKind.Object)
+                return Invalid("Invalid event", "Every event must have a 'data' object.");
+
+            BsonDocument data;
+            try
+            {
+                data = BsonDocument.Parse(e.Data.GetRawText());
+            }
+            catch (Exception ex) when (ex is FormatException or BsonException)
+            {
+                return Invalid("Invalid event", "An event 'data' object could not be stored.");
+            }
+
+            events.Add(new BugEvent
+            {
+                Type = e.Type,
+                Timestamp = e.Timestamp,
+                Url = e.Url,
+                Data = data,
+            });
+        }
 
         var session = new BugSession
         {
@@ -53,13 +95,7 @@ public class SessionsController(IBugSessionService sessionService) : ControllerB
             Browser = request.Browser,
             Viewport = request.Viewport,
             CreatedAt = DateTime.UtcNow,
-            Events = request.Events.Select(e => new BugEvent
-            {
-                Type = e.Type,
-                Timestamp = e.Timestamp,
-                Url = e.Url,
-                Data = BsonDocument.Parse(e.Data.GetRawText())
-            }).ToList()
+            Events = events,
         };
 
         var createdSession = await sessionService.CreateAsync(session, ct);
@@ -67,7 +103,7 @@ public class SessionsController(IBugSessionService sessionService) : ControllerB
         return CreatedAtAction(
             nameof(GetById),
             new { id = createdSession.Id },
-            SessionMapper.ToResponse(createdSession));
+            new { id = createdSession.Id });
     }
 
     [HttpDelete("{id}")]
@@ -81,4 +117,12 @@ public class SessionsController(IBugSessionService sessionService) : ControllerB
 
         return NoContent();
     }
+
+    private BadRequestObjectResult Invalid(string title, string detail)
+        => BadRequest(new ProblemDetails
+        {
+            Title = title,
+            Detail = detail,
+            Status = StatusCodes.Status400BadRequest,
+        });
 }

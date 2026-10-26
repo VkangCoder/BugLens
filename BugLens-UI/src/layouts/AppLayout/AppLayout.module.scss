@@ -1,3 +1,5 @@
+// Shell from the buglens-design skill: fixed 224px sidebar, 48px top bar, scrolling content.
+// Only the sidebar and the top bar are fixed; pages scroll inside .content.
 .root {
   height: 100vh;
   overflow: hidden;

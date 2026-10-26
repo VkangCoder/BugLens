@@ -1,11 +1,13 @@
 import { useAuth } from "@/auth/useAuth";
 import Logo from "@/layouts/AppLayout/components/Logo";
-import { Alert, Button, Checkbox, Form, Input, type InputRef } from "antd";
+import { Alert, Button, Checkbox, Form, Input, Tooltip, type InputRef } from "antd";
 import { isAxiosError } from "axios";
-import { Eye, EyeOff, Lock, ShieldCheck, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Moon, ShieldCheck, Sun, User } from "lucide-react";
 import { useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import styles from "./LoginPage.module.scss";
+import EventTraceBackground from "@/components/EventTraceBackground";
+import { useTheme } from "@/theme/useTheme";
 
 const ICON = { size: 14, strokeWidth: 1.5 };
 
@@ -41,7 +43,7 @@ export default function LoginPage() {
   const location = useLocation();
   const [form] = Form.useForm<LoginFormValues>();
   const passwordRef = useRef<InputRef>(null);
-
+  const { isDark, toggleMode } = useTheme();
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,12 +66,24 @@ export default function LoginPage() {
 
   return (
     <div className={styles.root}>
+      <div className={styles.themeToggle}>
+        <Tooltip title={isDark ? "Switch to light theme" : "Switch to dark theme"} placement='left'>
+          <Button
+            type='text'
+            size='small'
+            icon={isDark ? <Sun {...ICON} /> : <Moon {...ICON} />}
+            onClick={toggleMode}
+            aria-label='Toggle theme'
+          />
+        </Tooltip>
+      </div>
+      <EventTraceBackground />
       <main className={styles.main}>
         <div className={styles.content}>
-          <div className={styles.heading}>
-            <div className={styles.titleRow}>
+          <div className={styles.header_title}>
+            <div>
               <h1 className={styles.title}>Sign in to BugLens</h1>
-              <Logo size={24} wordmark={false} />
+              <Logo size={30} wordmark={false} />
             </div>
             <p className={styles.subtitle}>Review sessions recorded by your team.</p>
           </div>
@@ -88,8 +102,8 @@ export default function LoginPage() {
             >
               <Form.Item
                 name='name'
-                label='Name'
-                rules={[{ required: true, whitespace: true, message: "Enter your name" }]}
+                label='Username'
+                rules={[{ required: true, whitespace: true, message: "Enter your username" }]}
               >
                 <Input
                   size='large'
@@ -97,26 +111,23 @@ export default function LoginPage() {
                   autoComplete='username'
                   autoCapitalize='none'
                   spellCheck={false}
-                  placeholder='Your username'
+                  placeholder='Enter your username'
                   autoFocus
                 />
               </Form.Item>
-
               <Form.Item name='password' label='Password' rules={[{ required: true, message: "Enter your password" }]}>
                 <Input.Password
                   ref={passwordRef}
                   size='large'
                   prefix={<Lock {...ICON} className={styles.fieldIcon} />}
                   autoComplete='current-password'
+                  placeholder='Enter your password'
                   iconRender={(visible) => (visible ? <EyeOff {...ICON} /> : <Eye {...ICON} />)}
-                  placeholder='Your password'
                 />
               </Form.Item>
-
               <Form.Item name='remember' valuePropName='checked'>
                 <Checkbox>Keep me signed in on this device</Checkbox>
               </Form.Item>
-
               <Button type='primary' htmlType='submit' size='large' block loading={submitting}>
                 {submitting ? "Signing in…" : "Sign in"}
               </Button>
@@ -127,7 +138,7 @@ export default function LoginPage() {
 
           <p className={styles.privacy}>
             <ShieldCheck {...ICON} className={styles.privacyIcon} />
-            <span>Password fields in recorded sessions are masked in the browser and never stored.</span>
+            <span>Sign in with the account your workspace admin created</span>
           </p>
         </div>
       </main>

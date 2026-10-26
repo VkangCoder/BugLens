@@ -13,8 +13,8 @@ interface SecretKeyModalProps {
 }
 
 /**
- * Hiển thị ingest key đúng một lần. Server chỉ lưu hash nên không có cách xem lại:
- * modal không đóng khi bấm nền / Esc để tránh mất key do thao tác nhầm.
+ * Shows the ingest key exactly once. The server only stores a hash, so there is no way to view it again:
+ * the modal does not close on backdrop click / Esc, to avoid losing the key by mistake.
  */
 export default function SecretKeyModal({ open, projectName, ingestKey, onClose }: SecretKeyModalProps) {
   const { message } = App.useApp();

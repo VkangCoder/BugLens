@@ -10,3 +10,7 @@ export async function createUser(request: CreateUserRequest): Promise<UserRespon
   const response = await apiClient.post<UserResponse>("/auth/users", request);
   return response.data;
 }
+
+export async function deleteUser(id: string): Promise<void> {
+  await apiClient.delete(`/auth/users/${encodeURIComponent(id)}`);
+}

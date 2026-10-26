@@ -1,4 +1,5 @@
-import { listUsers } from "@/api/users";
+import { deleteUser, listUsers } from "@/api/users";
+import { parseApiProblem } from "@/api/problem";
 import AdminPage from "@/components/AdminPage";
 import { useAuth } from "@/auth/useAuth";
 import type { UserResponse } from "@/types/admin";
@@ -6,7 +7,7 @@ import { formatDateTime, formatRelative } from "@/utils/format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import CreateUserModal from "./CreateUserModal";
 import styles from "./AdminUsersPage.module.scss";
@@ -15,7 +16,7 @@ const ICON = { size: 14, strokeWidth: 1.5 };
 
 export default function AdminUsersPage() {
   const queryClient = useQueryClient();
-  const { message } = App.useApp();
+  const { modal, message } = App.useApp();
   const { user: me } = useAuth();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -23,6 +24,27 @@ export default function AdminUsersPage() {
     queryKey: ["users"],
     queryFn: listUsers,
   });
+
+  const isMe = (name: string) => !!me && me.name.toLowerCase() === name.toLowerCase();
+
+  function confirmDelete(user: UserResponse) {
+    modal.confirm({
+      title: `Delete user ${user.name}?`,
+      content: "They can no longer sign in. A session they already have open stays valid until its token expires.",
+      okText: "Delete user",
+      okButtonProps: { danger: true },
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deleteUser(user.id);
+          message.success(`User ${user.name} deleted.`);
+          await queryClient.invalidateQueries({ queryKey: ["users"] });
+        } catch (error: unknown) {
+          message.error(parseApiProblem(error, "Couldn't delete the user.").message);
+        }
+      },
+    });
+  }
 
   const columns: ColumnsType<UserResponse> = [
     {
@@ -32,7 +54,7 @@ export default function AdminUsersPage() {
       render: (name: string) => (
         <span>
           <strong>{name}</strong>
-          {me && me.name.toLowerCase() === name.toLowerCase() && <span className={styles.you}>you</span>}
+          {isMe(name) && <span className={styles.you}>you</span>}
         </span>
       ),
     },
@@ -49,6 +71,23 @@ export default function AdminUsersPage() {
       dataIndex: "createdAt",
       key: "createdAt",
       render: (iso: string) => <Tooltip title={formatDateTime(iso)}>{formatRelative(iso)}</Tooltip>,
+    },
+    {
+      title: "",
+      key: "actions",
+      align: "right",
+      render: (_: unknown, user) => (
+        <Tooltip title={isMe(user.name) ? "You can't delete your own account" : "Delete user"}>
+          <Button
+            size="small"
+            danger
+            icon={<Trash2 {...ICON} />}
+            disabled={isMe(user.name)}
+            onClick={() => confirmDelete(user)}
+            aria-label={`Delete user ${user.name}`}
+          />
+        </Tooltip>
+      ),
     },
   ];
 

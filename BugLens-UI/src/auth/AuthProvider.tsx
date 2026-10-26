@@ -36,7 +36,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session) return;
-    const remaining = Date.parse(session.expiresAt) - Date.now();
+    const remaining = Date.parse(session.expireAt) - Date.now();
     const id = window.setTimeout(endSession, Math.max(remaining, 0));
     return () => window.clearTimeout(id);
   }, [session, endSession]);

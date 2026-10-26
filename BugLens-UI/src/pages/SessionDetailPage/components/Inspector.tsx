@@ -11,6 +11,7 @@ import styles from "./Inspector.module.scss";
 
 const ICON = { size: 14 };
 
+// Key/value rows shown for each event type
 function fieldsOf(event: BugEvent): [string, ReactNode][] {
   switch (event.type) {
     case "click":

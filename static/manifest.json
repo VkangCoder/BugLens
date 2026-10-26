@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "BugLens",
+  "name": "Bug Lens",
   "description": "Capture and replay bug sessions to help devs, QA, and PMs reproduce errors instantly.",
   "version": "0.1.0",
   "permissions": ["storage", "tabs"],

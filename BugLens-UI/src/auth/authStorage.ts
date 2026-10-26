@@ -10,12 +10,12 @@ function getStore(kind: StoreKind): Storage | null {
   try {
     return kind === "local" ? window.localStorage : window.sessionStorage;
   } catch {
-    return null;
+    return null; // accessing the property can also throw
   }
 }
 
 function isExpired(session: AuthSession): boolean {
-  const expireAt = Date.parse(session.expiresAt);
+  const expireAt = Date.parse(session.expireAt);
   return Number.isNaN(expireAt) || expireAt <= Date.now();
 }
 
@@ -23,7 +23,7 @@ function removeFrom(kind: StoreKind): void {
   try {
     getStore(kind)?.removeItem(KEY);
   } catch {
-    /* skip */
+    /* ignore */
   }
 }
 
@@ -34,12 +34,13 @@ function readFrom(kind: StoreKind): AuthSession | null {
     const parsed: unknown = JSON.parse(raw);
     if (isLoginResponse(parsed) && !isExpired(parsed)) return parsed;
   } catch {
-    /* skip */
+    /* broken JSON → treat as missing */
   }
-  removeFrom(kind);
+  removeFrom(kind); // clean up when broken or expired
   return null;
 }
 
+/** Called once at app startup (AuthProvider). */
 export function restoreSession(): AuthSession | null {
   memory = readFrom("local") ?? readFrom("session");
   return memory;
@@ -56,7 +57,7 @@ export function setSession(session: AuthSession, remember: boolean): void {
   try {
     getStore(remember ? "local" : "session")?.setItem(KEY, JSON.stringify(session));
   } catch {
-    /* skip */
+    /* quota exceeded / blocked: still kept in memory */
   }
 }
 

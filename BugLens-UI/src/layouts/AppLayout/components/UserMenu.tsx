@@ -5,7 +5,7 @@ import styles from "./UserMenu.module.scss";
 
 const ICON = { size: 14, strokeWidth: 1.5 };
 
-/** Menu tài khoản ở Topbar: thông tin người dùng + Log out (có xác nhận). */
+/** Account menu in the Topbar: user info + Log out (with confirmation). */
 export default function UserMenu() {
   const { user, logout } = useAuth();
   const { modal } = App.useApp();

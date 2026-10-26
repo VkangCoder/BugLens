@@ -11,7 +11,7 @@ namespace BugLens.Api.Controllers;
 public class ProjectsController(IProjectService projects) : ControllerBase
 {
     [HttpGet]
-    [Authorize] // Dev and Admin can both list projects (no hash, no key)
+    [Authorize]
     public async Task<ActionResult<IReadOnlyList<ProjectResponse>>> List(CancellationToken ct)
         => Ok(await projects.ListAsync(ct));
 
@@ -20,7 +20,7 @@ public class ProjectsController(IProjectService projects) : ControllerBase
     public async Task<ActionResult<ProjectWithKeyResponse>> Create(CreateProjectRequest request, CancellationToken ct)
     {
         var created = await projects.CreateAsync(request.Name, ct);
-        Response.Headers.CacheControl = "no-store"; // the response carries a secret
+        Response.Headers.CacheControl = "no-store"; // response contains a secret
         return StatusCode(StatusCodes.Status201Created, created);
     }
 
@@ -34,4 +34,9 @@ public class ProjectsController(IProjectService projects) : ControllerBase
         Response.Headers.CacheControl = "no-store";
         return Ok(rotated);
     }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> Delete(string id, CancellationToken ct)
+        => await projects.DeleteAsync(id, ct) ? NoContent() : NotFound();
 }

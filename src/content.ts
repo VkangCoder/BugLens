@@ -1,3 +1,6 @@
+// Runs in the extension's isolated world: sees the DOM, not the page's JS.
+// Captures clicks and inputs here, and forwards navigation / network / console /
+// error events coming from main-world.ts. Nothing is sent unless recording.
 (() => {
   const MAX_TEXT = 100;
   const MAX_VALUE = 200;
@@ -6,6 +9,7 @@
 
   chrome.storage.local.get("isRecording", (raw) => {
     isRecording = Boolean((raw as StorageShape).isRecording);
+    // Page (re)loaded while recording: mark it on the timeline
     if (isRecording) {
       send({
         type: "navigation",
@@ -23,6 +27,7 @@
   });
 
   function send(event: BugEvent): void {
+    // After the extension is reloaded, this old script loses access to chrome.runtime
     if (!chrome.runtime?.id) {
       stop();
       return;
@@ -32,10 +37,12 @@
     try {
       chrome.runtime.sendMessage({ type: "EVENT", event } satisfies RuntimeMessage);
     } catch {
+      // "Extension context invalidated" - the page needs a reload
       stop();
     }
   }
 
+  // Short, readable CSS selector: #id, [data-testid], or tag.class1.class2
   function selectorOf(el: Element): string {
     const tag = el.tagName.toLowerCase();
     if (el.id) return `${tag}#${CSS.escape(el.id)}`;
@@ -55,10 +62,11 @@
     return text.trim().replace(/\s+/g, " ").slice(0, MAX_TEXT);
   }
 
-  //  Click
+  // ── Click ──
   function handleClick(event: MouseEvent): void {
     if (!(event.target instanceof Element)) return;
 
+    // Prefer the interactive element the user meant (button, link...) over an inner <span>/<svg>
     const el =
       event.target.closest("button, a, input, select, textarea, label, [role='button'], [onclick]") ?? event.target;
 
@@ -76,7 +84,35 @@
     });
   }
 
-  //  Input (fires once when the value is committed, not on every keystroke)
+  // Input (fires once when the value is committed, not on every keystroke) 
+  const SENSITIVE_PATTERN = /pass|pwd|secret|token|otp|cvv|cvc|card|credit|ssn|security-code|api[-_]?key/i;
+
+  const SENSITIVE_AUTOCOMPLETE = new Set([
+    "current-password",
+    "new-password",
+    "cc-number",
+    "cc-csc",
+    "cc-exp",
+    "cc-exp-month",
+    "cc-exp-year",
+    "one-time-code",
+  ]);
+
+  function isSensitiveField(
+    el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement,
+    inputType: string,
+  ): boolean {
+    if (inputType === "password") return true;
+
+    const autocomplete = (el.autocomplete ?? "").toLowerCase();
+    if (SENSITIVE_AUTOCOMPLETE.has(autocomplete)) return true;
+
+    const haystack = [el.name, el.id, el.getAttribute("placeholder") ?? "", el.getAttribute("aria-label") ?? ""].join(
+      " ",
+    );
+    return SENSITIVE_PATTERN.test(haystack);
+  }
+
   function handleChange(event: Event): void {
     const el = event.target;
     if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement)) {
@@ -97,7 +133,7 @@
     }
 
     // Passwords never leave the page
-    const masked = inputType === "password";
+    const masked = isSensitiveField(el, inputType);
 
     send({
       type: "input",
@@ -113,13 +149,15 @@
     });
   }
 
-  // Events from main-world.ts
+  // ── Events from main-world.ts ──
   function handleBridge(event: MessageEvent): void {
     if (event.source !== window) return;
     const message = event.data as BridgeMessage | undefined;
     if (message?.source !== "buglens-main-world") return;
     send(message.event);
   }
+
+
 
   function stop(): void {
     document.removeEventListener("click", handleClick, true);

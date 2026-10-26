@@ -103,6 +103,13 @@ interface LastSession {
   eventCount: number;
   savedAt: string;
   seen: boolean;
+  projectName?: string;
+}
+
+// Project the ingest key belongs to (from POST /api/v1/ingest/validate-key)
+interface IngestProject {
+  id: string;
+  name: string;
 }
 
 // 3. Shape of chrome.storage.local
@@ -113,6 +120,10 @@ interface StorageShape {
   events?: BugEvent[];
   session?: SessionMeta | null;
   lastSession?: LastSession | null;
+  allowedDomains?: string[];
+  ingestKeyValidated?: boolean;
+  ingestKey?: string;
+  ingestProject?: IngestProject | null;
 }
 
 // 4. Message protocol (content/popup → background)
@@ -150,5 +161,4 @@ interface BridgeMessage {
 interface EnvConfig {
   API_BASE_URL: string;
   DASHBOARD_URL: string;
-  API_KEY: string;
 }

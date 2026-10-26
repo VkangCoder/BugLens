@@ -1,12 +1,12 @@
 import { getSessionById } from "@/api/sessions";
-import { useTheme } from "@/theme/useTheme";
 import { useQuery } from "@tanstack/react-query";
 import { App, Breadcrumb, Button, Input, Tooltip, type InputRef } from "antd";
 import { ChevronRight, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useMatch, useNavigate, useSearchParams } from "react-router";
 import styles from "./Topbar.module.scss";
-import UserMenu from "./UserMenu";
+import { useTheme } from "@/theme/useTheme";
+import UserMenu from "@/components/UserMenu/UserMenu";
 
 const SESSION_ID = /^[a-f0-9]{24}$/i; // MongoDB ObjectId
 const IS_MAC = navigator.platform.toUpperCase().includes("MAC");
@@ -19,6 +19,7 @@ function pathOf(url: string): string {
   } catch {
     return url;
   }
+  console.log();
 }
 
 function useCrumbs(): { title: ReactNode }[] {

@@ -1,3 +1,6 @@
+// Session detail from the buglens-design skill (ui_kits/dashboard/SessionDetail.jsx):
+// header + timeline card + tabbed event log on the left, 380px inspector on the right.
+
 .center {
   display: flex;
   flex: 1;
@@ -9,6 +12,7 @@
   margin: 20px;
 }
 
+// antd Splitter: main panel | draggable bar | inspector panel
 .page {
   flex: 1;
   min-height: 0;
@@ -20,13 +24,14 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  overflow: hidden !important;
+  overflow: hidden !important; // only the event list scrolls
 }
 
 .inspectorPanel {
-  overflow: hidden !important;
+  overflow: hidden !important; // the inspector scrolls its own body
 }
 
+// ── Header ──
 .header {
   display: flex;
   flex: none;
@@ -62,7 +67,6 @@
 
 .project {
   margin: 0;
-  font-family: var(--ant-font-family-code);
   font-size: 11px;
 }
 
@@ -71,6 +75,7 @@
   font: 400 11px/1.6 var(--ant-font-family-code);
 }
 
+// ── Timeline card ──
 .timelineCard {
   flex: none;
   margin: 16px 20px 0;
@@ -98,6 +103,7 @@
   font-weight: 400;
 }
 
+// ── Tabs (2px underline in the text color, not the accent) ──
 .tabs {
   flex: none;
   padding: 8px 20px 0;
@@ -140,6 +146,7 @@
   font: 400 11px/1.6 var(--ant-font-family-code);
 }
 
+// ── Type filter popover ──
 .typeFilter {
   display: flex;
   flex-direction: column;
@@ -169,6 +176,7 @@
   font: 400 11px/1 var(--ant-font-family-code);
 }
 
+// ── Event list: the only part that scrolls ──
 .list {
   flex: 1;
   min-height: 0;

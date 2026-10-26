@@ -5,7 +5,7 @@ import { useSessionCount } from "@/hooks/useSessionCount";
 import type { SessionSort, SessionSummary } from "@/types/session";
 import { formatDateTime, formatDuration, formatRelative, hostAndPath } from "@/utils/format";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, App, Button, Empty, Input, Pagination, Segmented, Select, Table, Tooltip, Typography } from "antd";
+import { Alert, App, Button, Empty, Input, Pagination, Segmented, Select, Table, Tag, Tooltip, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { Check, Copy, Download, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -155,6 +155,16 @@ export default function SessionListPage() {
             </span>
           </span>
         </div>
+      ),
+    },
+    {
+      title: "Project",
+      key: "project",
+      width: 140,
+      render: (_, s) => (
+        <Tooltip title={s.projectName ? undefined : `Project ${s.projectId} no longer exists`}>
+          <Tag className={styles.project}>{s.projectName ?? "Deleted project"}</Tag>
+        </Tooltip>
       ),
     },
     {

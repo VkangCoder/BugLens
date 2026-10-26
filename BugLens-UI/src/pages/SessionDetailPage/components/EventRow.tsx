@@ -6,7 +6,7 @@ import { describeEvent, formatOffset, isMasked } from "@/utils/events";
 import styles from "./EventRow.module.scss";
 
 interface EventRowProps {
-  index: number;
+  index: number; // 1-based, shown in the first column
   event: BugEvent;
   offset: number;
   selected: boolean;
@@ -18,6 +18,7 @@ export default function EventRow({ index, event, offset, selected, onClick }: Ev
   const isError = event.type === "error";
   const ref = useRef<HTMLButtonElement>(null);
 
+  // Keep the selected row visible while playing or stepping
   useEffect(() => {
     if (selected) ref.current?.scrollIntoView({ block: "nearest" });
   }, [selected]);

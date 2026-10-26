@@ -1,4 +1,4 @@
-﻿using BugLens.Api.Data;
+using BugLens.Api.Data;
 using BugLens.Api.Interfaces;
 using BugLens.Api.Models;
 using BugLens.Api.Models.DTOs.Auth;
@@ -77,6 +77,37 @@ public class AuthService : IAuthService
         return new UserResponse(user.Id, user.Name, user.Role, user.CreatedAt);
     }
 
+    public async Task<IReadOnlyList<UserResponse>> ListUsersAsync(CancellationToken ct)
+    {
+        var users = await _users
+            .Find(FilterDefinition<AppUser>.Empty, new FindOptions { Collation = NameCollation })
+            .Sort(Builders<AppUser>.Sort.Ascending(u => u.Name))
+            .Project<AppUser>(Builders<AppUser>.Projection.Exclude(u => u.PasswordHash))
+            .ToListAsync(ct);
+
+        return users
+            .Select(u => new UserResponse(u.Id, u.Name, u.Role, u.CreatedAt))
+            .ToList();
+    }
+
+    public async Task<DeleteUserResult> DeleteUserAsync(string id, string? currentUserId, CancellationToken ct)
+    {
+        if (!MongoDB.Bson.ObjectId.TryParse(id, out _)) return DeleteUserResult.NotFound;
+        if (id == currentUserId) return DeleteUserResult.Self;
+
+        var user = await _users.Find(u => u.Id == id).FirstOrDefaultAsync(ct);
+        if (user is null) return DeleteUserResult.NotFound;
+
+        if (user.Role == Roles.Admin)
+        {
+            var admins = await _users.CountDocumentsAsync(u => u.Role == Roles.Admin, new CountOptions { Limit = 2 }, ct);
+            if (admins <= 1) return DeleteUserResult.LastAdmin;
+        }
+
+        var result = await _users.DeleteOneAsync(u => u.Id == id, ct);
+        return result.DeletedCount > 0 ? DeleteUserResult.Deleted : DeleteUserResult.NotFound;
+    }
+
     public async Task<LoginResponse?> LoginAsync(LoginRequest request, CancellationToken ct)
     {
         var name = request.Name.Trim();
@@ -103,7 +134,7 @@ public class AuthService : IAuthService
 
         if (hasAdmin) return;
 
-        if (string.IsNullOrWhiteSpace(_seed.Name) || string.IsNullOrEmpty(_seed.Password) || _seed.Password.Length < 6)
+        if (string.IsNullOrWhiteSpace(_seed.Name) || string.IsNullOrEmpty(_seed.Password) || _seed.Password.Length < 5)
             throw new InvalidOperationException(
                 "No admin exists. Set SeedAdmin:Name and SeedAdmin:Password (>= 6 chars) via appsettings / user-secrets.");
 
@@ -115,6 +146,7 @@ public class AuthService : IAuthService
         }
         catch (InvalidOperationException)
         {
+            // Another instance just finished seeding (blocked by the unique index). Not an error.
             _logger.LogInformation("Admin '{Name}' already seeded by another instance.", _seed.Name);
         }
     }

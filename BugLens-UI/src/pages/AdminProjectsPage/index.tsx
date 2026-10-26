@@ -1,4 +1,4 @@
-import { listProjects, rotateProjectKey } from "@/api/projects";
+import { deleteProject, listProjects, rotateProjectKey } from "@/api/projects";
 import { parseApiProblem } from "@/api/problem";
 import AdminPage from "@/components/AdminPage";
 import SecretKeyModal from "@/components/SecretKeyModal";
@@ -7,7 +7,7 @@ import { formatDateTime, formatRelative } from "@/utils/format";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Table, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { KeyRound, Plus } from "lucide-react";
+import { KeyRound, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import CreateProjectModal from "./CreateProjectModal";
 import styles from "./AdminProjectsPage.module.scss";
@@ -49,6 +49,27 @@ export default function AdminProjectsPage() {
     });
   }
 
+  function confirmDelete(project: ProjectResponse) {
+    modal.confirm({
+      title: `Delete project ${project.name}?`,
+      content:
+        "Its ingest key stops working immediately. Sessions already recorded are kept and show as \"Deleted project\". This can't be undone.",
+      okText: "Delete project",
+      okButtonProps: { danger: true },
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deleteProject(project.id);
+          message.success(`Project ${project.name} deleted.`);
+          await queryClient.invalidateQueries({ queryKey: ["projects"] });
+          await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+        } catch (error: unknown) {
+          message.error(parseApiProblem(error, "Couldn't delete the project.").message);
+        }
+      },
+    });
+  }
+
   const columns: ColumnsType<ProjectResponse> = [
     { title: "Project", dataIndex: "name", key: "name", render: (name: string) => <strong>{name}</strong> },
     {
@@ -75,9 +96,20 @@ export default function AdminProjectsPage() {
       key: "actions",
       align: "right",
       render: (_: unknown, project) => (
-        <Button size="small" icon={<KeyRound {...ICON} />} onClick={() => confirmRotate(project)}>
-          Rotate key
-        </Button>
+        <span className={styles.actions}>
+          <Button size="small" icon={<KeyRound {...ICON} />} onClick={() => confirmRotate(project)}>
+            Rotate key
+          </Button>
+          <Tooltip title="Delete project">
+            <Button
+              size="small"
+              danger
+              icon={<Trash2 {...ICON} />}
+              onClick={() => confirmDelete(project)}
+              aria-label={`Delete project ${project.name}`}
+            />
+          </Tooltip>
+        </span>
       ),
     },
   ];

@@ -120,7 +120,7 @@
 
 .pager {
   flex: none;
-  display: flex;
+   display: flex;            // ← added
   justify-content: flex-end;
   padding: 12px 20px;
   border-top: 1px solid var(--ant-color-border-secondary);
@@ -245,6 +245,14 @@
   :global(.ant-typography-copy-success) {
     color: var(--ant-color-success) !important;
   }
+}
+
+.project {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
 }
 
 .mono {

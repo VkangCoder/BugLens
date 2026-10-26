@@ -10,4 +10,6 @@ public interface IProjectService
     Task<IReadOnlyList<ProjectResponse>> ListAsync(CancellationToken ct);
     Task<ProjectWithKeyResponse?> RotateKeyAsync(string id, CancellationToken ct);
     Task<Project?> FindByIngestKeyAsync(string key, CancellationToken ct);
+    Task<bool> DeleteAsync(string id, CancellationToken ct);
+    Task<IReadOnlyDictionary<string, string>> GetNamesAsync(IEnumerable<string> ids, CancellationToken ct);
 }

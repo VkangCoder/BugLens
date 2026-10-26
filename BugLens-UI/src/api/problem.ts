@@ -1,10 +1,10 @@
 import { isAxiosError } from "axios";
 
 export interface ApiProblem {
-  /** null khi không có response (mất mạng, CORS, TLS...). */
+  /** null when there is no response (offline, CORS, TLS...). */
   status: number | null;
   message: string;
-  /** Lỗi theo từng field, key đã đổi sang camelCase ("Name" -> "name"). */
+  /** Per-field errors, keys converted to camelCase ("Name" -> "name"). */
   fieldErrors: Record<string, string>;
 }
 
@@ -17,8 +17,8 @@ function camelCase(key: string): string {
 }
 
 /**
- * Chuẩn hóa lỗi từ ASP.NET Core (ProblemDetails / ValidationProblemDetails).
- * Dữ liệu mạng là unknown nên đọc từng trường qua type guard.
+ * Normalizes errors from ASP.NET Core (ProblemDetails / ValidationProblemDetails).
+ * Network data is unknown, so each field is read through a type guard.
  */
 export function parseApiProblem(error: unknown, fallback: string): ApiProblem {
   if (!isAxiosError(error)) return { status: null, message: fallback, fieldErrors: {} };

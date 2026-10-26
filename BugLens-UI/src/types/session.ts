@@ -72,6 +72,7 @@ export interface ViewportInfo {
 export interface SessionResponse {
   id: string;
   projectId: string;
+  projectName?: string | null; // null when the project was deleted
   startedAt: string;
   endedAt?: string | null;
   initialUrl: string;
@@ -85,6 +86,7 @@ export interface SessionResponse {
 export interface SessionSummary {
   id: string;
   projectId: string;
+  projectName?: string | null; // null when the project was deleted
   initialUrl: string;
   startedAt: string;
   endedAt?: string | null;
