@@ -1,19 +1,106 @@
+@use "../../styles/data-table";
+
 .alert {
-  margin-bottom: 12px;
+  margin: 0 20px 12px;
 }
 
-.you {
-  margin-left: 8px;
+// ── Toolbar ──
+.search {
+  width: 300px;
+  max-width: 100%;
+}
+
+.searchIcon {
+  color: var(--ant-color-text-tertiary);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.segmentCount {
+  font-family: var(--ant-font-family-code);
   font-size: 11px;
   color: var(--ant-color-text-tertiary);
 }
 
-.role {
+.warningText {
+  color: var(--ant-color-warning-text);
+}
+
+// ── Table ──
+.table {
+  @include data-table.base;
+}
+
+.cell {
+  @include data-table.cell-stack;
+}
+
+.cellTitle {
+  @include data-table.cell-title;
+}
+
+.cellMeta {
+  @include data-table.cell-meta;
+}
+
+.you {
+  margin-left: 8px;
   font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ant-color-text-tertiary);
+}
+
+.projects {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+// Project name as a quiet chip that opens the project
+.projectLink {
+  overflow: hidden;
+  max-width: 160px;
+  padding: 1px 7px;
+  border: 1px solid var(--ant-color-border-secondary);
+  border-radius: 4px;
+  color: var(--ant-color-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: var(--ant-color-primary);
+    color: var(--ant-color-primary);
+  }
+}
+
+.more {
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+}
+
+.secondary {
   font-size: 12px;
   color: var(--ant-color-text-secondary);
 }
 
-.roleAdmin {
-  color: var(--ant-color-primary);
+.muted {
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
+}
+
+// No sign-in for 30+ days: a candidate for removal
+.stale {
+  font-size: 12px;
+  color: var(--ant-color-warning-text);
 }

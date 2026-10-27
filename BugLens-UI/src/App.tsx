@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { BrowserRouter, Route, Routes } from "react-router";
 import AppLayout from "./layouts/AppLayout";
-
+import ProjectDetailPage from "@/pages/ProjectDetailPage";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -37,8 +37,9 @@ export default function App() {
                 <Route element={<AppLayout />}>
                   <Route index element={<SessionListPage />} />
                   <Route path='sessions/:id' element={<SessionDetailPage />} />
+                  <Route path='projects' element={<AdminProjectsPage />} />
+                  <Route path='projects/:id' element={<ProjectDetailPage />} />
                   <Route path='admin' element={<RequireAdmin />}>
-                    <Route path='projects' element={<AdminProjectsPage />} />
                     <Route path='users' element={<AdminUsersPage />} />
                   </Route>
                 </Route>

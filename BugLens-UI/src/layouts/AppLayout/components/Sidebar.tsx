@@ -36,13 +36,15 @@ export default function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) 
   const sessionCount = useSessionCount();
   const errorCount = useSessionCount(true);
 
-  const selectedKey = pathname.startsWith("/admin/projects")
+  const selectedKey = pathname.startsWith("/projects")
     ? "projects"
-    : pathname.startsWith("/admin/users")
-      ? "users"
-      : pathname === "/" && searchParams.get("hasErrors") === "true"
-        ? "errors"
-        : "sessions";
+    : pathname.startsWith("/admin/projects")
+      ? "projects"
+      : pathname.startsWith("/admin/users")
+        ? "users"
+        : pathname === "/" && searchParams.get("hasErrors") === "true"
+          ? "errors"
+          : "sessions";
 
   const items: MenuProps["items"] = [
     {
@@ -56,6 +58,11 @@ export default function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) 
       icon: <CircleAlert {...ICON} />,
       label: "Errors",
       extra: collapsed ? null : <Count value={errorCount} danger />,
+    },
+    {
+      key: "projects",
+      icon: <Boxes {...ICON} />,
+      label: "Projects",
     },
     {
       key: "saved-views",
@@ -75,10 +82,7 @@ export default function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) 
           {
             type: "group" as const,
             label: collapsed ? null : "Admin",
-            children: [
-              { key: "projects", icon: <Boxes {...ICON} />, label: "Projects" },
-              { key: "users", icon: <Users {...ICON} />, label: "Users" },
-            ],
+            children: [{ key: "users", icon: <Users {...ICON} />, label: "Users" }],
           },
         ]
       : []),
@@ -87,7 +91,7 @@ export default function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) 
   const onClick: MenuProps["onClick"] = ({ key }) => {
     if (key === "sessions") navigate("/");
     if (key === "errors") navigate("/?hasErrors=true");
-    if (key === "projects") navigate("/admin/projects");
+    if (key === "projects") navigate("/projects");
     if (key === "users") navigate("/admin/users");
   };
 

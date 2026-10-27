@@ -13,4 +13,5 @@ public class AppUser
     public int Team { get; set; }
     public string Role { get; set; } = Roles.Dev;
     public DateTime CreatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
 }

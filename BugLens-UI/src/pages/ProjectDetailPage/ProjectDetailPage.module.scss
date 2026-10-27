@@ -1,0 +1,137 @@
+@use "../../styles/data-table";
+
+.center {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.alert {
+  margin: 0 20px 16px;
+}
+
+// Error count stays red; !important beats the AdminPage subtitle link color
+.dangerLink {
+  color: var(--ant-color-error-text) !important;
+  text-decoration-color: color-mix(in srgb, var(--ant-color-error) 40%, transparent) !important;
+
+  &:hover {
+    color: var(--ant-color-error) !important;
+  }
+}
+
+// ── Setup callout: only while the signed-in user has no key here ──
+.setup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 20px 20px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ant-color-primary) 30%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ant-color-primary) 8%, transparent);
+}
+
+.setupIcon {
+  flex: none;
+  color: var(--ant-color-primary);
+}
+
+.setupText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ant-color-text-secondary);
+
+  strong {
+    font-weight: 600;
+    color: var(--ant-color-text);
+  }
+}
+
+// ── Sections ──
+.section {
+  margin-bottom: 28px;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 0 20px 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ant-color-text);
+}
+
+.sectionCount {
+  margin-left: 4px;
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ant-color-text-tertiary);
+}
+
+.sectionHint {
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
+}
+
+.spacer {
+  flex: 1;
+}
+
+// ── Tables ──
+.table {
+  @include data-table.base($row-height: 52px);
+}
+
+.revokedRow {
+  opacity: 0.6;
+}
+
+.cell {
+  @include data-table.cell-stack;
+}
+
+.cellTitle {
+  @include data-table.cell-title;
+}
+
+.cellMeta {
+  @include data-table.cell-meta;
+}
+
+.you {
+  margin-left: 8px;
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ant-color-text-tertiary);
+}
+
+.mono {
+  font-family: var(--ant-font-family-code);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ant-color-text-secondary);
+}
+
+.secondary {
+  font-size: 12px;
+  color: var(--ant-color-text-secondary);
+}
+
+.muted {
+  font-size: 12px;
+  color: var(--ant-color-text-tertiary);
+}

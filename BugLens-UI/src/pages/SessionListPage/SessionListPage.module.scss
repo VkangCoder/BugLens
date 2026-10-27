@@ -51,6 +51,14 @@
   color: var(--ant-color-text-tertiary);
 }
 
+// Active project filter; the X clears it
+.filterChip {
+  border-color: color-mix(in srgb, var(--ant-color-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--ant-color-primary) 8%, transparent);
+  color: var(--ant-color-primary);
+  font-size: 12px;
+}
+
 .toolbarSpacer {
   flex: 1;
 }

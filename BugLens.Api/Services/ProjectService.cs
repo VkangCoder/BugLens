@@ -3,83 +3,60 @@ using BugLens.Api.Models;
 using BugLens.Api.Models.DTOs.Projects;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using System.Buffers.Text;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace BugLens.Api.Services;
 
 public class ProjectService : IProjectService
 {
     private const string CollectionName = "projects";
-    private const string KeyMarker = "bl_";
-    private const int DisplayPrefixLength = 9;
+    private const string LegacyKeyIndex = "ux_projects_key_hash";
 
     private readonly IMongoCollection<Project> _projects;
 
     public ProjectService(IMongoDatabase database)
         => _projects = database.GetCollection<Project>(CollectionName);
 
+    // Removes the old per-project key: its unique index (new projects have no hash, so a second one
+    // would collide on null) and the stored hashes. Safe to run on every startup.
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        var model = new CreateIndexModel<Project>(
-            Builders<Project>.IndexKeys.Ascending(p => p.IngestKeyHash),
-            new CreateIndexOptions { Unique = true, Name = "ux_projects_key_hash" });
+        using var cursor = await _projects.Indexes.ListAsync(ct);
+        var indexes = await cursor.ToListAsync(ct);
+        if (indexes.Any(i => i["name"].AsString == LegacyKeyIndex))
+            await _projects.Indexes.DropOneAsync(LegacyKeyIndex, ct);
 
-        await _projects.Indexes.CreateOneAsync(model, cancellationToken: ct);
+        var legacyFields = Builders<Project>.Filter.Exists("IngestKeyHash");
+        var unset = Builders<Project>.Update
+            .Unset("IngestKeyHash")
+            .Unset("IngestKeyPrefix")
+            .Unset("KeyRotatedAt");
+        await _projects.UpdateManyAsync(legacyFields, unset, cancellationToken: ct);
     }
 
-    public async Task<ProjectWithKeyResponse> CreateAsync(string name, CancellationToken ct)
+    public async Task<ProjectResponse> CreateAsync(string name, CancellationToken ct)
     {
-        var key = GenerateKey();
         var project = new Project
         {
             Name = name.Trim(),
-            IngestKeyHash = Hash(key),
-            IngestKeyPrefix = key[..DisplayPrefixLength],
             CreatedAt = DateTime.UtcNow,
         };
 
         await _projects.InsertOneAsync(project, cancellationToken: ct);
-        return ToWithKey(project, key);
+        return ToResponse(project);
     }
 
-    public async Task<IReadOnlyList<ProjectResponse>> ListAsync(CancellationToken ct)
+    // ids: null = every project (admin), otherwise only these
+    public async Task<IReadOnlyList<ProjectResponse>> ListAsync(IReadOnlyCollection<string>? ids, CancellationToken ct)
     {
-        var projects = await _projects.Find(_ => true).SortBy(p => p.Name).ToListAsync(ct);
-        return projects
-            .Select(p => new ProjectResponse(p.Id, p.Name, p.IngestKeyPrefix, p.CreatedAt, p.KeyRotatedAt))
-            .ToList();
+        var filter = ids is null
+            ? Builders<Project>.Filter.Empty
+            : Builders<Project>.Filter.In(p => p.Id, ids.Where(id => ObjectId.TryParse(id, out _)));
+
+        var projects = await _projects.Find(filter).SortBy(p => p.Name).ToListAsync(ct);
+        return projects.Select(ToResponse).ToList();
     }
 
-    public async Task<ProjectWithKeyResponse?> RotateKeyAsync(string id, CancellationToken ct)
-    {
-        if (!ObjectId.TryParse(id, out _)) return null; // avoid FormatException → 500
-
-        var key = GenerateKey();
-        var update = Builders<Project>.Update
-            .Set(p => p.IngestKeyHash, Hash(key))
-            .Set(p => p.IngestKeyPrefix, key[..DisplayPrefixLength])
-            .Set(p => p.KeyRotatedAt, DateTime.UtcNow);
-
-        var project = await _projects.FindOneAndUpdateAsync(
-            p => p.Id == id,
-            update,
-            new FindOneAndUpdateOptions<Project> { ReturnDocument = ReturnDocument.After },
-            ct);
-
-        return project is null ? null : ToWithKey(project, key);
-    }
-
-    public async Task<Project?> FindByIngestKeyAsync(string key, CancellationToken ct)
-    {
-        if (!key.StartsWith(KeyMarker, StringComparison.Ordinal)) return null;
-
-        var hash = Hash(key);
-        return await _projects.Find(p => p.IngestKeyHash == hash).FirstOrDefaultAsync(ct);
-    }
-
-    // Removes the project and its key; the extension gets 401 right away. Sessions are kept.
+    // Keys stop working right away (key lookup requires the project). Sessions are kept.
     public async Task<bool> DeleteAsync(string id, CancellationToken ct)
     {
         if (!ObjectId.TryParse(id, out _)) return false;
@@ -101,12 +78,5 @@ public class ProjectService : IProjectService
         return projects.ToDictionary(p => p.Id, p => p.Name);
     }
 
-    private static string GenerateKey()
-        => KeyMarker + Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32)); // 256 bit
-
-    private static string Hash(string key)
-        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
-
-    private static ProjectWithKeyResponse ToWithKey(Project p, string key)
-        => new(p.Id, p.Name, p.IngestKeyPrefix, p.CreatedAt, p.KeyRotatedAt, key);
+    private static ProjectResponse ToResponse(Project p) => new(p.Id, p.Name, p.CreatedAt);
 }

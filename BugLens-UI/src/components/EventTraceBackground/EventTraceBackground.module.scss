@@ -5,7 +5,7 @@
   overflow: hidden;
   pointer-events: none;
 
-  mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, transparent 0%, rgb(0 0 0 / 0.35) 55%, #000 100%);
+  mask-image: radial-gradient(ellipse 40% 45% at 50% 50%, transparent 0%, rgb(0 0 0 / 0.6) 60%, #000 100%);
 }
 
 .svg {
@@ -38,26 +38,110 @@
   animation-iteration-count: infinite;
 }
 
-.errorDot {
-  fill: var(--ant-color-error);
+// ── Icon event ──
+// Màu lấy từ `color` của <g> cha (var(--event-*)), icon lucide dùng stroke="currentColor".
+.chip,
+.chipClicked,
+.errorChip {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.6;
+}
+
+.chipBg {
+  fill: var(--ant-color-bg-layout);
+  stroke: currentcolor;
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+}
+
+// Sáng lên khi xung của lane đi qua (chu kỳ và độ trễ đặt inline theo từng lane)
+.chip {
+  animation-name: marker-glow;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+// Icon click mà con trỏ chuột ghé qua: keyframes `bl-click-glow` sinh động trong component, animation-name đặt inline
+// (CSS Modules sẽ thêm hash vào animation-name khai báo ở đây nên không khớp được với <style> động).
+.chipClicked {
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+.ripple {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.25;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+.errorChip {
   opacity: 0.85;
 }
 
 .errorRing {
   fill: none;
-  stroke: var(--ant-color-error);
+  stroke: currentcolor;
   stroke-width: 1;
   transform-box: fill-box;
   transform-origin: center;
   animation: error-ring 3.6s ease-out infinite;
 }
 
+// ── Con trỏ chuột ──
+.cursor {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  opacity: 0.85;
+}
+
+.cursorPress {
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transform-origin: 0 0; // đầu mũi tên là gốc toạ độ của nhóm
+}
+
+.cursorIcon {
+  color: var(--ant-color-text);
+  fill: var(--ant-color-bg-container);
+  stroke: currentcolor;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.25));
+}
+
 @keyframes pulse-travel {
   from {
     transform: translateX(-300px);
   }
+
   to {
     transform: translateX(1900px);
+  }
+}
+
+@keyframes marker-glow {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  2% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  9% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
   }
 }
 
@@ -66,6 +150,7 @@
     opacity: 0.6;
     transform: scale(1);
   }
+
   to {
     opacity: 0;
     transform: scale(3.2);
@@ -73,8 +158,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse {
+  .pulse,
+  .cursor,
+  .ripple {
     display: none;
+  }
+
+  .chip,
+  .chipClicked,
+  .ripple,
+  .cursor,
+  .cursorPress {
+    animation: none !important;
   }
 
   .errorRing {

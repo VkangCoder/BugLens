@@ -1,3 +1,4 @@
+import { listProjects } from "@/api/projects";
 import { getSessionById } from "@/api/sessions";
 import { useQuery } from "@tanstack/react-query";
 import { App, Breadcrumb, Button, Input, Tooltip, type InputRef } from "antd";
@@ -19,14 +20,16 @@ function pathOf(url: string): string {
   } catch {
     return url;
   }
-  console.log();
 }
 
 function useCrumbs(): { title: ReactNode }[] {
   const [searchParams] = useSearchParams();
   const detail = useMatch("/sessions/:id");
+  const projectList = useMatch("/projects");
+  const projectDetail = useMatch("/projects/:id");
   const admin = useMatch("/admin/:section");
   const id = detail?.params.id;
+  const projectId = projectDetail?.params.id ?? searchParams.get("project");
 
   const { data: session } = useQuery({
     queryKey: ["sessions", id],
@@ -34,7 +37,25 @@ function useCrumbs(): { title: ReactNode }[] {
     enabled: !!id,
   });
 
+  // Same cache as the Projects pages, so the name is usually there already
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: listProjects,
+    enabled: !!projectId,
+  });
+  const projectName = projects?.find((p) => p.id === projectId)?.name;
+
   const sessions = { title: <Link to='/'>Sessions</Link> };
+  const projectsCrumb = { title: <Link to='/projects'>Projects</Link> };
+
+  if (projectList) return [{ title: "Projects" }];
+
+  if (projectDetail) {
+    return [
+      projectsCrumb,
+      { title: projectName ?? <span className={styles.crumbMono}>{projectDetail.params.id}</span> },
+    ];
+  }
 
   if (id) {
     return [
@@ -52,6 +73,14 @@ function useCrumbs(): { title: ReactNode }[] {
 
   if (admin) {
     return [{ title: "Admin" }, { title: admin.params.section === "users" ? "Users" : "Projects" }];
+  }
+
+  if (projectId) {
+    return [
+      projectsCrumb,
+      { title: <Link to={`/projects/${encodeURIComponent(projectId)}`}>{projectName ?? "Project"}</Link> },
+      { title: searchParams.get("hasErrors") === "true" ? "Errors" : "Sessions" },
+    ];
   }
 
   if (searchParams.get("hasErrors") === "true") {

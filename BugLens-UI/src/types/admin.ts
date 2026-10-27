@@ -1,15 +1,15 @@
 import type { Role } from "@/types/auth";
 
+// Ingest keys are per member: see IngestKeyResponse in api/projectAccess.ts
 export interface ProjectResponse {
   id: string;
   name: string;
-  keyPrefix: string;
   createdAt: string;
-  keyRotatedAt: string | null;
-}
-
-export interface ProjectWithKeyResponse extends ProjectResponse {
-  ingestKey: string;
+  memberCount: number;
+  myActiveKeyCount: number; // keys of the signed-in user
+  sessionCount: number;
+  errorSessionCount: number;
+  lastSessionAt: string | null;
 }
 
 export interface UserResponse {
@@ -17,6 +17,8 @@ export interface UserResponse {
   name: string;
   role: Role;
   createdAt: string;
+  lastLoginAt: string | null;
+  projects: { id: string; name: string }[] | null;
 }
 
 export interface CreateUserRequest {

@@ -1,3 +1,4 @@
+import { listProjects } from "@/api/projects";
 import { deleteSession, getSessions } from "@/api/sessions";
 import { useAuth } from "@/auth/useAuth";
 import { useElementHeight } from "@/hooks/useElementHeight";
@@ -7,7 +8,7 @@ import { formatDateTime, formatDuration, formatRelative, hostAndPath } from "@/u
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, App, Button, Empty, Input, Pagination, Segmented, Select, Table, Tag, Tooltip, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Check, Copy, Download, Search, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import styles from "./SessionListPage.module.scss";
@@ -47,6 +48,7 @@ export default function SessionListPage() {
   const scope: Scope = searchParams.get("hasErrors") === "true" ? "errors" : "all";
   const search = searchParams.get("q") ?? "";
   const sort: SessionSort = searchParams.get("sort") === "oldest" ? "oldest" : "newest";
+  const projectId = searchParams.get("project") ?? "";
 
   function updateParams(next: {
     page?: number;
@@ -54,9 +56,11 @@ export default function SessionListPage() {
     scope?: Scope;
     search?: string;
     sort?: SessionSort;
+    projectId?: string;
   }) {
-    const merged = { page, pageSize, scope, search, sort, ...next };
+    const merged = { page, pageSize, scope, search, sort, projectId, ...next };
     const params = new URLSearchParams();
+    if (merged.projectId) params.set("project", merged.projectId);
     if (merged.search) params.set("q", merged.search);
     if (merged.scope === "errors") params.set("hasErrors", "true");
     if (merged.sort !== "newest") params.set("sort", merged.sort);
@@ -79,7 +83,16 @@ export default function SessionListPage() {
     hasErrors: scope === "errors" ? true : undefined,
     search: search || undefined,
     sort,
+    projectId: projectId || undefined,
   };
+
+  // Name for the project filter chip (opened from a project page)
+  const { data: projects } = useQuery({
+    queryKey: ["projects"],
+    queryFn: listProjects,
+    enabled: !!projectId,
+  });
+  const projectName = projects?.find((p) => p.id === projectId)?.name;
 
   const { data, isFetching, isError } = useQuery({
     queryKey: ["sessions", params],
@@ -87,8 +100,9 @@ export default function SessionListPage() {
     placeholderData: keepPreviousData,
   });
 
-  const totalCount = useSessionCount();
-  const errorCount = useSessionCount(true);
+  // Counts follow the project filter, so "All 3 · Errors 1" describes the rows below
+  const totalCount = useSessionCount(undefined, projectId || undefined);
+  const errorCount = useSessionCount(true, projectId || undefined);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -157,16 +171,21 @@ export default function SessionListPage() {
         </div>
       ),
     },
-    {
-      title: "Project",
-      key: "project",
-      width: 140,
-      render: (_, s) => (
-        <Tooltip title={s.projectName ? undefined : `Project ${s.projectId} no longer exists`}>
-          <Tag className={styles.project}>{s.projectName ?? "Deleted project"}</Tag>
-        </Tooltip>
-      ),
-    },
+    // Every row has the same project while filtering by one, so the column would say nothing
+    ...(projectId
+      ? []
+      : [
+          {
+            title: "Project",
+            key: "project",
+            width: 140,
+            render: (_: unknown, s: SessionSummary) => (
+              <Tooltip title={s.projectName ? undefined : `Project ${s.projectId} no longer exists`}>
+                <Tag className={styles.project}>{s.projectName ?? "Deleted project"}</Tag>
+              </Tooltip>
+            ),
+          },
+        ]),
     {
       title: "Status",
       dataIndex: "errorCount",
@@ -207,7 +226,11 @@ export default function SessionListPage() {
       <header className={styles.header}>
         <div className={styles.heading}>
           <h1 className={styles.title}>Sessions</h1>
-          <p className={styles.subtitle}>Recorded by the BugLens extension across acme-web.</p>
+          <p className={styles.subtitle}>
+            {projectId
+              ? `Recorded into ${projectName ?? "this project"} by its members' extensions.`
+              : "Recorded by the BugLens extension in the projects you belong to."}
+          </p>
         </div>
         <Button size='small' icon={<Download {...ICON} />} onClick={exportPage} disabled={!data?.items.length}>
           Export
@@ -224,6 +247,19 @@ export default function SessionListPage() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
+        {projectId && (
+          <Tooltip title='Show sessions from every project'>
+            <Button
+              size='small'
+              className={styles.filterChip}
+              icon={<X {...ICON} />}
+              iconPlacement='end'
+              onClick={() => updateParams({ projectId: "", page: 1 })}
+            >
+              Project: {projectName ?? "…"}
+            </Button>
+          </Tooltip>
+        )}
         <Segmented<Scope>
           size='small'
           value={scope}

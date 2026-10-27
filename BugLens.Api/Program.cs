@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,8 +77,11 @@ builder.Services
     });
 
 builder.Services.Configure<SeedAdminSettings>(builder.Configuration.GetSection(SeedAdminSettings.SectionName));
+
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
+builder.Services.AddScoped<IIngestKeyService, IngestKeyService>();
 
 builder.Services.AddCors(options =>
 {
@@ -85,6 +89,21 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod());
+});
+
+// Login: 10 attempts per minute per client IP, then 429 (slows password guessing)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(RateLimitPolicies.Login, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
 });
 
 builder.Services.AddControllers();
@@ -100,7 +119,13 @@ using (var scope = app.Services.CreateScope())
     var sp = scope.ServiceProvider;
 
     await sp.GetRequiredService<IBugSessionService>().EnsureIndexesAsync(CancellationToken.None);
+
     await sp.GetRequiredService<IProjectService>().EnsureIndexesAsync();
+
+    await sp.GetRequiredService<IProjectMemberService>().EnsureIndexesAsync();
+    await sp.GetRequiredService<IProjectMemberService>().RemoveOrphansAsync();
+
+    await sp.GetRequiredService<IIngestKeyService>().EnsureIndexesAsync();
 
     var auth = sp.GetRequiredService<IAuthService>();
     await auth.EnsureIndexesAsync();
@@ -129,6 +154,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

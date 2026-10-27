@@ -3,16 +3,22 @@ using BugLens.Api.Models;
 using BugLens.Api.Models.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using BugLens.Api.Auth;
 
 
 namespace BugLens.Api.Controllers
 {
     [Route("api/v1/auth")]
     [ApiController]
-    public class AuthController(IAuthService authService) : ControllerBase
+    public class AuthController(
+        IAuthService authService,
+        IProjectMemberService memberService,
+        IProjectService projectService) : ControllerBase
     {
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting(RateLimitPolicies.Login)]
         public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken ct)
         {
             var result = await authService.LoginAsync(request, ct);
@@ -44,15 +50,33 @@ namespace BugLens.Api.Controllers
 
         [HttpGet("users")]
         [Authorize(Roles = Roles.Admin)]
-        public async Task<ActionResult<IReadOnlyList<UserResponse>>> ListUsers(CancellationToken ct) => Ok(await authService.ListUsersAsync(ct));
+        public async Task<ActionResult<IReadOnlyList<UserResponse>>> ListUsers(CancellationToken ct)
+        {
+            var users = await authService.ListUsersAsync(ct);
+            var projectIdsByUser = await memberService.ListProjectIdsByUserAsync(ct);
+            var names = await projectService.GetNamesAsync(projectIdsByUser.Values.SelectMany(ids => ids), ct);
+
+            return Ok(users.Select(user => user with
+            {
+                Projects = projectIdsByUser.GetValueOrDefault(user.Id, [])
+                    .Where(names.ContainsKey)
+                    .Select(id => new UserProjectResponse(id, names[id]))
+                    .OrderBy(p => p.Name)
+                    .ToList(),
+            }).ToList());
+        }
 
 
-        // The deleted user's token keeps working until it expires (JWT is stateless)
+        // The deleted user's sign-in token keeps working until it expires (JWT is stateless)
         [HttpDelete("users/{id}")]
         [Authorize(Roles = Roles.Admin)]
         public async Task<IActionResult> DeleteUser(string id, CancellationToken ct)
         {
             var result = await authService.DeleteUserAsync(id, User.FindFirst("sub")?.Value, ct);
+
+            // Their personal ingest keys must stop working too, not just their sign-in
+            if (result == DeleteUserResult.Deleted)
+                await memberService.RemoveUserAsync(id, ct);
 
             return result switch
             {

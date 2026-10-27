@@ -13,7 +13,10 @@ namespace BugLens.Api.Controllers;
 [Route("api/v1/sessions")]
 [ApiController]
 [Authorize]
-public class SessionsController(IBugSessionService sessionService, IProjectService projectService) : ControllerBase
+public class SessionsController(
+    IBugSessionService sessionService,
+    IProjectService projectService,
+    IProjectMemberService memberService) : ControllerBase
 {
     private const int MaxEvents = 10_000;
 
@@ -21,7 +24,16 @@ public class SessionsController(IBugSessionService sessionService, IProjectServi
     [Authorize]
     public async Task<IActionResult> GetAll([FromQuery] SessionListQuery query, CancellationToken ct)
     {
-        var response = await sessionService.GetSummariesAsync(query, ct);
+        IReadOnlyCollection<string>? allowedProjectIds = null;
+        if (!User.IsInRole(Roles.Admin))
+        {
+            var userId = User.FindFirst("sub")?.Value;
+            if (userId is null) return Unauthorized();
+
+            allowedProjectIds = await memberService.ListProjectIdsAsync(userId, ct);
+        }
+
+        var response = await sessionService.GetSummariesAsync(query, allowedProjectIds, ct);
 
         var names = await projectService.GetNamesAsync(response.Items.Select(s => s.ProjectId), ct);
         foreach (var item in response.Items)
@@ -38,6 +50,16 @@ public class SessionsController(IBugSessionService sessionService, IProjectServi
 
         if (session is null)
             return NotFound();
+
+        // 404 rather than 403, so non-members can't tell the session exists
+        if (!User.IsInRole(Roles.Admin))
+        {
+            var userId = User.FindFirst("sub")?.Value;
+            if (userId is null) return Unauthorized();
+
+            if (!await memberService.IsMemberAsync(session.ProjectId, userId, ct))
+                return NotFound();
+        }
 
         var response = SessionMapper.ToResponse(session);
         var names = await projectService.GetNamesAsync([session.ProjectId], ct);

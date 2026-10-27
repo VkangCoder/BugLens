@@ -1,0 +1,88 @@
+// Data table from the Sessions list: full-bleed, uppercase mono header, 56px rows, 20px page gutter.
+// Use inside a CSS module: .table { @include data-table.base; }
+@mixin base($row-height: 56px) {
+  border-top: 1px solid var(--ant-color-border-secondary);
+
+  :global {
+    .ant-table {
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .ant-table-container {
+      border-radius: 0 !important;
+    }
+
+    // Header: 32px, uppercase mono overline
+    .ant-table-thead > tr > th {
+      height: 32px;
+      padding-block: 0 !important;
+      border-radius: 0 !important;
+      background: var(--ant-color-bg-container);
+      color: var(--ant-color-text-tertiary);
+      font-family: var(--ant-font-family-code);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+
+      &::before {
+        display: none; // no column separators
+      }
+    }
+
+    .ant-table-tbody > tr > td {
+      height: $row-height;
+      padding-block: 0 !important;
+      background: transparent;
+    }
+
+    .ant-table-tbody > tr.ant-table-row:hover > td {
+      background: var(--ant-color-fill-tertiary);
+    }
+
+    // 20px page gutter on the outer columns (not on the empty-state row)
+    tr:not(.ant-table-placeholder) > .ant-table-cell:first-child {
+      padding-left: 20px !important;
+    }
+
+    tr:not(.ant-table-placeholder) > .ant-table-cell:last-child {
+      padding-right: 20px !important;
+    }
+  }
+}
+
+// Rows that open something on click
+@mixin clickable-rows {
+  :global(.ant-table-tbody > tr.ant-table-row) {
+    cursor: pointer;
+  }
+}
+
+// Two-line cell: primary text over a mono meta line
+@mixin cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+@mixin cell-title {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ant-color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin cell-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  font-family: var(--ant-font-family-code);
+  font-size: 11px;
+  color: var(--ant-color-text-tertiary);
+  white-space: nowrap;
+}

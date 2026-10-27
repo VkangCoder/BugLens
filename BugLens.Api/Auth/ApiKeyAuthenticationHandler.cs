@@ -1,3 +1,4 @@
+
 using BugLens.Api.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -10,15 +11,18 @@ public static class ApiKeyDefaults
 {
     public const string Scheme = "ApiKey";
     public const string HeaderName = "X-Api-Key";
+
     public const string ProjectIdClaim = "project_id";
     public const string ProjectNameClaim = "project_name";
+    public const string IngestKeyIdClaim = "ingest_key_id";
+    public const string IngestKeyOwnerIdClaim = "ingest_key_owner_id";
 }
 
 public class ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    IProjectService projects)
+    IIngestKeyService ingestKeys)
     : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
     private const int MaxKeyLength = 128;
@@ -29,21 +33,29 @@ public class ApiKeyAuthenticationHandler(
             return AuthenticateResult.NoResult();
 
         var key = values.ToString().Trim();
+
         if (key.Length == 0 || key.Length > MaxKeyLength)
             return AuthenticateResult.Fail("Invalid API key.");
 
-        var project = await projects.FindByIngestKeyAsync(key, Context.RequestAborted);
-        if (project is null)
+        var result = await ingestKeys.FindActiveByKeyAsync(
+            key,
+            Context.RequestAborted);
+
+        if (result is null)
             return AuthenticateResult.Fail("Invalid API key.");
 
         var identity = new ClaimsIdentity(
             [
-                new Claim(ApiKeyDefaults.ProjectIdClaim, project.Id),
-                new Claim(ApiKeyDefaults.ProjectNameClaim, project.Name),
+                new Claim(ApiKeyDefaults.ProjectIdClaim, result.Project.Id),
+                new Claim(ApiKeyDefaults.ProjectNameClaim, result.Project.Name),
+                new Claim(ApiKeyDefaults.IngestKeyIdClaim, result.Key.Id),
+                new Claim(ApiKeyDefaults.IngestKeyOwnerIdClaim, result.Key.OwnerUserId),
             ],
             Scheme.Name);
 
         return AuthenticateResult.Success(
-            new AuthenticationTicket(new ClaimsPrincipal(identity), Scheme.Name));
+            new AuthenticationTicket(
+                new ClaimsPrincipal(identity),
+                Scheme.Name));
     }
 }

@@ -21,12 +21,13 @@ public class BugSessionService : IBugSessionService
 
     public async Task<PagedResponse<SessionSummaryResponse>> GetSummariesAsync(
         SessionListQuery query,
+        IReadOnlyCollection<string>? allowedProjectIds,
         CancellationToken ct)
     {
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, SessionListQuery.MaxPageSize);
 
-        var filter = BuildFilter(query);
+        var filter = BuildFilter(query, allowedProjectIds);
 
         var totalCount = await _sessions.CountDocumentsAsync(filter, cancellationToken: ct);
 
@@ -62,6 +63,32 @@ public class BugSessionService : IBugSessionService
             PageSize = pageSize,
             TotalCount = totalCount,
         };
+    }
+
+    // Only three small fields per session leave MongoDB; the events array stays on the server
+    public async Task<IReadOnlyDictionary<string, ProjectSessionStats>> GetProjectStatsAsync(
+        IEnumerable<string> projectIds,
+        CancellationToken ct)
+    {
+        var ids = projectIds.ToList();
+        var rows = await _sessions
+            .Find(Builders<BugSession>.Filter.In(s => s.ProjectId, ids))
+            .Project(s => new
+            {
+                s.ProjectId,
+                s.StartedAt,
+                Errors = s.Events.Count(e => e.Type == ErrorEventType),
+            })
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(r => r.ProjectId)
+            .ToDictionary(
+                g => g.Key,
+                g => new ProjectSessionStats(
+                    g.LongCount(),
+                    g.LongCount(r => r.Errors > 0),
+                    g.Max(r => (DateTime?)r.StartedAt)));
     }
 
     public async Task<BugSession?> GetByIdAsync(string id, CancellationToken ct)
@@ -103,10 +130,16 @@ public class BugSessionService : IBugSessionService
             ct);
     }
 
-    private static FilterDefinition<BugSession> BuildFilter(SessionListQuery query)
+    private static FilterDefinition<BugSession> BuildFilter(
+        SessionListQuery query,
+        IReadOnlyCollection<string>? allowedProjectIds)
     {
         var f = Builders<BugSession>.Filter;
         var filter = f.Empty;
+
+        // Non-admins only see projects they belong to; an empty list matches nothing
+        if (allowedProjectIds is not null)
+            filter &= f.In(s => s.ProjectId, allowedProjectIds);
 
         if (!string.IsNullOrWhiteSpace(query.ProjectId))
             filter &= f.Eq(s => s.ProjectId, query.ProjectId);

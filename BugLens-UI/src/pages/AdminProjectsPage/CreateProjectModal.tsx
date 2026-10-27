@@ -1,6 +1,6 @@
 import { createProject } from "@/api/projects";
 import { parseApiProblem } from "@/api/problem";
-import type { ProjectWithKeyResponse } from "@/types/admin";
+import type { ProjectResponse } from "@/types/admin";
 import { Form, Input, Modal } from "antd";
 import { useState } from "react";
 
@@ -9,7 +9,7 @@ const FORM_ID = "create-project-form";
 interface CreateProjectModalProps {
   open: boolean;
   onClose: () => void;
-  onCreated: (project: ProjectWithKeyResponse) => void;
+  onCreated: (project: ProjectResponse) => void;
 }
 
 interface FormValues {
@@ -23,7 +23,6 @@ export default function CreateProjectModal({ open, onClose, onCreated }: CreateP
   async function handleFinish(values: FormValues) {
     setSubmitting(true);
     try {
-      // Called directly, not via useMutation: the mutation cache would keep the result (with ingestKey) for a few more minutes.
       onCreated(await createProject(values.name.trim()));
     } catch (error: unknown) {
       const problem = parseApiProblem(error, "Couldn't create the project.");

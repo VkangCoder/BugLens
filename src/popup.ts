@@ -353,6 +353,12 @@ function setupIngestKey(inputId: string, saveId: string, toggleId: string, statu
     }
   }
 
+  // Typing never touches storage: the saved key is only replaced once the API accepts a new one,
+  // and only removed when the API rejects that same key (401/403) or Save is pressed on an empty field.
+  async function readSaved(): Promise<StorageShape> {
+    return (await chrome.storage.local.get(["ingestKey", "ingestKeyValidated"])) as StorageShape;
+  }
+
   async function checkAndSaveKey(key: string): Promise<void> {
     const version = ++validationVersion;
 
@@ -361,7 +367,7 @@ function setupIngestKey(inputId: string, saveId: string, toggleId: string, statu
       if (version !== validationVersion) {
         return;
       }
-      setStatus("Enter the Ingest Key.", "error");
+      setStatus("Ingest Key removed.", "error");
       return;
     }
 
@@ -386,7 +392,15 @@ function setupIngestKey(inputId: string, saveId: string, toggleId: string, statu
         return;
       }
 
+      const saved = await readSaved();
+      const otherKeyInUse = saved.ingestKeyValidated === true && saved.ingestKey !== key;
+
       if (error instanceof InvalidKeyError) {
+        if (otherKeyInUse) {
+          setStatus(`${error.message} The saved key is still in use.`, "error");
+          return;
+        }
+
         await chrome.storage.local.remove([...KEY_STORAGE]);
         setStatus(error.message, "error");
         return;
@@ -395,14 +409,18 @@ function setupIngestKey(inputId: string, saveId: string, toggleId: string, statu
       // API offline, restarting or 5xx: keep the key instead of wiping it
       const reason =
         error instanceof Error && !(error instanceof TypeError) ? error.message : "Could not reach the API.";
-      const saved = (await chrome.storage.local.get(["ingestKey", "ingestKeyValidated"])) as StorageShape;
 
       if (saved.ingestKey === key && saved.ingestKeyValidated === true) {
         setStatus(`${reason} Using the saved key.`, "error");
         return;
       }
 
-      // A new key: keep it, but don't allow recording until the API accepts it
+      if (otherKeyInUse) {
+        setStatus(`${reason} The saved key is still in use; press Save to check the new one.`, "error");
+        return;
+      }
+
+      // No working key yet: keep this one, but don't allow recording until the API accepts it
       await chrome.storage.local.set({ ingestKey: key, ingestKeyValidated: false } satisfies StorageShape);
       await chrome.storage.local.remove("ingestProject");
       setStatus(`${reason} Key saved; press Save to check again.`, "error");
@@ -416,12 +434,16 @@ function setupIngestKey(inputId: string, saveId: string, toggleId: string, statu
       clearTimeout(validationTimer);
     }
 
-    void chrome.storage.local.remove([...KEY_STORAGE]);
-
     const key = input.value.trim();
 
     if (!key) {
-      setStatus("Please enter the Ingest Key.");
+      void readSaved().then((saved) => {
+        setStatus(
+          saved.ingestKey
+            ? "The saved key is still in use. Press Save with an empty field to remove it."
+            : "Please enter the Ingest Key.",
+        );
+      });
       return;
     }
 

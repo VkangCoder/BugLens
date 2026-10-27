@@ -86,7 +86,7 @@ public class AuthService : IAuthService
             .ToListAsync(ct);
 
         return users
-            .Select(u => new UserResponse(u.Id, u.Name, u.Role, u.CreatedAt))
+            .Select(u => new UserResponse(u.Id, u.Name, u.Role, u.CreatedAt, u.LastLoginAt))
             .ToList();
     }
 
@@ -120,6 +120,12 @@ public class AuthService : IAuthService
 
         if (user is null || !passwordOk)
             return null;
+
+        // Lets admins spot accounts nobody uses any more
+        await _users.UpdateOneAsync(
+            u => u.Id == user.Id,
+            Builders<AppUser>.Update.Set(u => u.LastLoginAt, DateTime.UtcNow),
+            cancellationToken: ct);
 
         var expiresAt = DateTime.UtcNow.AddMinutes(_jwt.ExpiryMinutes);
         return new LoginResponse(IssueToken(user, expiresAt), expiresAt, user.Name, user.Role);
